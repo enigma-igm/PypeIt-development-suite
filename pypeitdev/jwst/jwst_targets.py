@@ -70,10 +70,24 @@ def jwst_targets(progid, disperser, target, slit=None):
     # If bkg_redux is False, the code will model the sky and the object profile and perform optimal extraction.
     # If bkg_redux is True, the code will difference image and simply boxcar extract (optimal not implemented yet)
     for detname in detectors:
+
+        if '5015' in progid:
+            if disperser == 'G395H':
+                if target == 'Abell2744-QSO-1':
+                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_IFU/5015/Abell2744QSO1/G395H/'
+                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_IFU/5015/G395H/')
+
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw05015022001_02101_00001_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw05015022001_02101_00002_' + detname + '_uncal.fits')
+                    # uncalfile3 = os.path.join(rawpath_level2, 'jw05015022001_02101_00003_' + detname + '_uncal.fits')
+                    # uncalfile4 = os.path.join(rawpath_level2, 'jw05015022001_02101_00004_' + detname + '_uncal.fits')
+                    # uncalfile5 = os.path.join(rawpath_level2, 'jw05015022001_02101_00005_' + detname + '_uncal.fits')
+                    # uncalfile6 = os.path.join(rawpath_level2, 'jw05015022001_02101_00006_' + detname + '_uncal.fits')
+                    exp_list.append([uncalfile1, uncalfile2])
+
         if '3543' in progid:
             if 'G395M' == disperser:
                 ## BHstar object
-                
                 if target == 'BHstar':
                     rawpath_level2 = '/Users/joe/jwst_redux/Raw/NIRSPEC_MSA/3543/level_12/03543/'
                     redux_dir = os.path.join('/Users/joe/jwst_redux/redux/NIRSPEC_MSA/3543/', target)
@@ -83,6 +97,166 @@ def jwst_targets(progid, disperser, target, slit=None):
                     uncalfile3 = os.path.join(rawpath_level2, 'jw03543001001_07101_00004_' + detname + '_uncal.fits')
 
                 exp_list.append([uncalfile1, uncalfile2, uncalfile3]) 
+        
+        if '1181' in progid:
+            if target == 'JADES-GN-28074':
+
+                base_raw = "/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/GO1181"
+                base_redux = "/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/1181"
+
+                if disperser == 'G140M':
+                    subdir = 'G140M'
+                    visit_id = '04101'
+                    #visit_id = '18101'
+
+                elif disperser == 'G235M':
+                    subdir = 'G235M'
+                    #visit_id = '06101'
+                    visit_id = '20101'
+
+                elif disperser == 'G395M':
+                    subdir = 'G395M'
+                    visit_id = '08101'
+
+                elif disperser == 'PRISM':
+                    subdir = 'PRISM'
+                    #visit_id = '10101'
+                    #visit_id = '16101'
+                    #visit_id = '12101'
+                    visit_id = '14101'
+
+                else:
+                    raise ValueError(f"Disperser '{disperser}' not recognized")
+
+                rawpath_level2 = os.path.join(base_raw, subdir)
+                redux_dir = os.path.join(base_redux, subdir, target)
+
+                # Construct uncal file paths
+                uncalfile1 = os.path.join(rawpath_level2, f'jw01181004001_{visit_id}_00001_{detname}_uncal.fits')
+                uncalfile2 = os.path.join(rawpath_level2, f'jw01181004001_{visit_id}_00002_{detname}_uncal.fits')
+                uncalfile3 = os.path.join(rawpath_level2, f'jw01181004001_{visit_id}_00003_{detname}_uncal.fits')
+
+                exp_list.append([uncalfile1, uncalfile2, uncalfile3])
+        
+            elif target == 'JADES-GN-72127':
+                base_raw = "/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/GO1181"
+                base_redux = "/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/1181"
+
+                if disperser == 'G140M':
+                    subdir = 'G140M'
+                    visit_id = '09101'
+
+                elif disperser == 'G235M':
+                    subdir = 'G235M'
+                    #visit_id = '17101'
+                    visit_id = '07101'
+
+                elif disperser == 'G395M':
+                    subdir = 'G395M'
+                    visit_id = '25101'
+
+                elif disperser == 'G395H':
+                    subdir = 'G395H'
+                    visit_id = '03101'
+
+                elif disperser == 'PRISM':
+                    subdir = 'PRISM'
+                    visit_id = '11101'
+                    #visit_id = '13101'
+                    #visit_id = '31101'
+
+                else:
+                    raise ValueError(f"Disperser '{disperser}' not recognized")
+
+                rawpath_level2 = os.path.join(base_raw, subdir)
+                redux_dir = os.path.join(base_redux, subdir, target)
+
+                uncalfile1 = os.path.join(rawpath_level2, f'jw01181009001_{visit_id}_00001_{detname}_uncal.fits')
+                uncalfile2 = os.path.join(rawpath_level2, f'jw01181009001_{visit_id}_00002_{detname}_uncal.fits')
+                uncalfile3 = os.path.join(rawpath_level2, f'jw01181009001_{visit_id}_00003_{detname}_uncal.fits')
+
+                exp_list.append([uncalfile1, uncalfile2, uncalfile3])
+
+        # RUBIES LRD program
+        if '4233' in progid:
+            if disperser == 'PRISM':
+                if target == 'RUBIES-UDS-154183':
+                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/4233/PRISM'
+                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/4233/PRISM', target)
+
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw04233003001_03101_00002_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw04233003001_03101_00003_' + detname + '_uncal.fits')
+                    uncalfile3 = os.path.join(rawpath_level2, 'jw04233003001_03101_00004_' + detname + '_uncal.fits')
+                    # uncalfile4 = os.path.join(rawpath_level2, 'jw04233003002_03101_00002_' + detname + '_uncal.fits')
+                    # uncalfile5 = os.path.join(rawpath_level2, 'jw04233003002_03101_00003_' + detname + '_uncal.fits')
+                    # uncalfile6 = os.path.join(rawpath_level2, 'jw04233003003_03101_00002_' + detname + '_uncal.fits')
+                    # uncalfile7 = os.path.join(rawpath_level2, 'jw04233003003_03101_00003_' + detname + '_uncal.fits')
+                    # uncalfile8 = os.path.join(rawpath_level2, 'jw04233003003_03101_00004_' + detname + '_uncal.fits')
+
+                    exp_list.append([uncalfile1, uncalfile2, uncalfile3])
+
+                if target == 'RUBIES-EGS-42046':
+                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/4233/PRISM'
+                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/4233/PRISM', target)
+
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw04233005001_03101_00002_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw04233005001_03101_00004_' + detname + '_uncal.fits')
+
+                    exp_list.append([uncalfile1, uncalfile2])
+
+            elif disperser == 'G395M':
+                if target == 'RUBIES-UDS-154183':
+                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/4233/G395M'
+                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/4233/G395M', target)
+
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw04233003001_05101_00002_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw04233003001_05101_00003_' + detname + '_uncal.fits')
+                    uncalfile3 = os.path.join(rawpath_level2, 'jw04233003001_05101_00004_' + detname + '_uncal.fits')
+
+                    exp_list.append([uncalfile1, uncalfile2, uncalfile3])
+
+                if target == 'RUBIES-EGS-42046':
+                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/4233/G395M'
+                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/4233/G395M', target)
+
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw04233005001_05101_00002_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw04233005001_05101_00004_' + detname + '_uncal.fits')
+
+                    exp_list.append([uncalfile1, uncalfile2])
+
+                if target == 'RUBIES-EGS-49140':
+                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/4233/G395M'
+                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/4233/G395M', target)
+
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw04233006001_05101_00002_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw04233006001_05101_00003_' + detname + '_uncal.fits')
+                    uncalfile3 = os.path.join(rawpath_level2, 'jw04233006002_05101_00002_' + detname + '_uncal.fits')
+                    uncalfile4 = os.path.join(rawpath_level2, 'jw04233006002_05101_00004_' + detname + '_uncal.fits')
+                    uncalfile5 = os.path.join(rawpath_level2, 'jw04233006003_05101_00002_' + detname + '_uncal.fits')
+                    uncalfile6 = os.path.join(rawpath_level2, 'jw04233006003_05101_00004_' + detname + '_uncal.fits')
+
+                    exp_list.append([uncalfile1, uncalfile2, uncalfile3, 
+                                    uncalfile4, uncalfile5, uncalfile6])
+
+
+        # UNCOVER LRD
+        if '2561' in progid:
+            if 'PRISM' == disperser:
+                
+                if target == 'A2744-45924':
+                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/2561/PRISM'
+                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/2561/PRISM', target)
+
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw02561002001_03101_00002_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw02561002001_03101_00003_' + detname + '_uncal.fits')
+                    uncalfile3 = os.path.join(rawpath_level2, 'jw02561002001_03101_00004_' + detname + '_uncal.fits')
+                    uncalfile4 = os.path.join(rawpath_level2, 'jw02561002001_03101_00005_' + detname + '_uncal.fits')
+                    uncalfile5 = os.path.join(rawpath_level2, 'jw02561002001_03101_00006_' + detname + '_uncal.fits')
+                    uncalfile6 = os.path.join(rawpath_level2, 'jw02561002001_03101_00007_' + detname + '_uncal.fits')
+
+                exp_list.append([uncalfile1, uncalfile2, uncalfile3, 
+                                uncalfile4, uncalfile5, uncalfile6])
+
         
         if '2073' in progid:
             if 'PRISM' == disperser:
