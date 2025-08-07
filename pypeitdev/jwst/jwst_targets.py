@@ -71,20 +71,6 @@ def jwst_targets(progid, disperser, target, slit=None):
     # If bkg_redux is True, the code will difference image and simply boxcar extract (optimal not implemented yet)
     for detname in detectors:
 
-        if '5015' in progid:
-            if disperser == 'G395H':
-                if target == 'Abell2744-QSO-1':
-                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_IFU/5015/Abell2744QSO1/G395H/'
-                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_IFU/5015/G395H/')
-
-                    uncalfile1 = os.path.join(rawpath_level2, 'jw05015022001_02101_00001_' + detname + '_uncal.fits')
-                    uncalfile2 = os.path.join(rawpath_level2, 'jw05015022001_02101_00002_' + detname + '_uncal.fits')
-                    # uncalfile3 = os.path.join(rawpath_level2, 'jw05015022001_02101_00003_' + detname + '_uncal.fits')
-                    # uncalfile4 = os.path.join(rawpath_level2, 'jw05015022001_02101_00004_' + detname + '_uncal.fits')
-                    # uncalfile5 = os.path.join(rawpath_level2, 'jw05015022001_02101_00005_' + detname + '_uncal.fits')
-                    # uncalfile6 = os.path.join(rawpath_level2, 'jw05015022001_02101_00006_' + detname + '_uncal.fits')
-                    exp_list.append([uncalfile1, uncalfile2])
-
         if '3543' in progid:
             if 'G395M' == disperser:
                 ## BHstar object
