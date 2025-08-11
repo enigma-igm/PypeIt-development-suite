@@ -23,6 +23,12 @@ def jwst_spec1d_files(progid, disperser, target, slit=None, source=None):
     spec1d_list : list
         List of spec1d filenames.
     """
+
+    if isinstance(slit, (tuple, list)) and len(slit) == 1:
+        slit = slit[0]
+    if isinstance(source, (tuple, list)) and len(source) == 1:
+        source = source[0]
+
     if slit is None and source is None:
         raise ValueError("Either 'slit' or 'source' must be specified.")
     elif slit is not None and source is not None:
@@ -75,8 +81,8 @@ def jwst_targets(progid, disperser, target, slit=None):
             if 'G395M' == disperser:
                 ## BHstar object
                 if target == 'BHstar':
-                    rawpath_level2 = '/Users/joe/jwst_redux/Raw/NIRSPEC_MSA/3543/level_12/03543/'
-                    redux_dir = os.path.join('/Users/joe/jwst_redux/redux/NIRSPEC_MSA/3543/', target)
+                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/GO3543/G395M/stage1_rate'
+                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/3543/G395M/', target)
 
                     uncalfile1 = os.path.join(rawpath_level2, 'jw03543001001_07101_00002_' + detname + '_uncal.fits')
                     uncalfile2 = os.path.join(rawpath_level2, 'jw03543001001_07101_00003_' + detname + '_uncal.fits')
@@ -190,6 +196,32 @@ def jwst_targets(progid, disperser, target, slit=None):
 
                     exp_list.append([uncalfile1, uncalfile2])
 
+                if target == 'RUBIES-EGS-40579':
+                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/GO4233/40579/PRISM'
+                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/4233/PRISM', target)
+
+                    # uncalfile1 = os.path.join(rawpath_level2, 'jw04233001002_03101_00002_' + detname + '_uncal.fits')
+                    # uncalfile2 = os.path.join(rawpath_level2, 'jw04233001002_03101_00003_' + detname + '_uncal.fits')
+                    # uncalfile3 = os.path.join(rawpath_level2, 'jw04233001002_03101_00004_' + detname + '_uncal.fits')
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw04233001003_03101_00002_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw04233001003_03101_00003_' + detname + '_uncal.fits')
+                    uncalfile3 = os.path.join(rawpath_level2, 'jw04233001003_03101_00004_' + detname + '_uncal.fits')
+
+
+                    exp_list.append([uncalfile1, uncalfile2, uncalfile3])
+
+
+                if target == 'RUBIES-UDS-QG-z7':
+                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/GO4233/977881/PRISM'
+                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/4233/PRISM', target)
+
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw04233003002_03101_00002_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw04233003002_03101_00003_' + detname + '_uncal.fits')
+                    uncalfile3 = os.path.join(rawpath_level2, 'jw04233003002_03101_00004_' + detname + '_uncal.fits')
+
+
+                    exp_list.append([uncalfile1, uncalfile2, uncalfile3])
+
             elif disperser == 'G395M':
                 if target == 'RUBIES-UDS-154183':
                     rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/4233/G395M'
@@ -223,6 +255,18 @@ def jwst_targets(progid, disperser, target, slit=None):
 
                     exp_list.append([uncalfile1, uncalfile2, uncalfile3, 
                                     uncalfile4, uncalfile5, uncalfile6])
+                    
+
+                if target == 'RUBIES-UDS-QG-z7':
+                    rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/GO4233/977881/G395M'
+                    redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/4233/G395M', target)
+
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw04233003001_05101_00002_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw04233003001_05101_00003_' + detname + '_uncal.fits')
+                    uncalfile3 = os.path.join(rawpath_level2, 'jw04233003001_05101_00004_' + detname + '_uncal.fits')
+
+
+                    exp_list.append([uncalfile1, uncalfile2, uncalfile3])
 
 
         # UNCOVER LRD

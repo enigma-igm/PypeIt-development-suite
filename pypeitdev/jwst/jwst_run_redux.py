@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from IPython import embed
 
 # set environment variables
-os.environ['CRDS_PATH'] = '/Users/joe/crds_cache/'
+os.environ['CRDS_PATH'] = '/Users/jiamuh/crds_cache/'
 os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu/'
 from matplotlib import pyplot as plt
 from astropy.io import fits
@@ -401,7 +401,6 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     print(dither_offsets_pixels)
 
     print('Reading in calwebb outputs. This may take a while...')
-
     # TODO Figure out why this is so damn slow! I suspect it is calwebb1
     for iexp in range(nexp):
         # Open some JWST data models
@@ -490,9 +489,9 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     else:
         gd_slits_sources = slit_sources_uni
 
+    #embed()
     # Loop over all slits. For each exposure create a mosaic and save them to individual PypeIt spec2d files.
     for ii, (islit, isource) in enumerate(gd_slits_sources):
-
         # Clear the ginga canvas for each new source/slit
         if show:
             display.clear_all(allow_new=True)
@@ -524,6 +523,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
             if bkg_redux:
                 bkgImg_list = []
                 for iexp_bkg in bkg_indices[iexp]:
+                    #embed()
                     bkgImg_i, _, _, _, _= jwst_mosaic(msa_data[:, iexp_bkg], [CalibrationsNRS1, CalibrationsNRS2], kludge_err=kludge_err,
                                             noise_floor=par['scienceframe']['process']['noise_floor'])
                     bkgImg_list.append(bkgImg_i)
