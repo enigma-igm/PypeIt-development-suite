@@ -342,6 +342,33 @@ def jwst_proc(msa_data, slit_slice, finitemask, flatfield, pathloss, barshadow, 
         zero_not_finite(count_scale), rn2_img
 
 
+def fnu_to_flam(wave, f_nu, sigma_nu): 
+    """
+    Utility routine to convert a spectrum in F_nu to F_lambda using astropy units
+    
+    Parameters
+    ----------
+    wave : np.ndarray of Quantities
+        Wavelength array
+    f_nu : np.ndarray of Quantities
+        Flux array in F_nu units
+    sigma_nu : np.ndarray of Quantities
+        Error array in F_nu units
+    
+    Returns
+    -------
+    f_lam : np.ndarray of Quantities
+        Flux array in F_lambda units. We will convert to erg/s/cm^2/Angstrom
+    sigma_lam : np.ndarray of Quantities
+        Error array in F_lambda units. We will convert to erg/s/cm^2/Angstrom. 
+    
+    """
+    nu_to_flam_factor =const.c/np.square(wave)
+    factor = nu_to_flam_factor
+    f_lam = (f_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)    
+    sigma_lam = (sigma_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)
+    
+    return f_lam, sigma_lam  
 
 def jwst_fnu_to_flam(fnufile, outfile=None, plot=False):
     """
@@ -350,7 +377,8 @@ def jwst_fnu_to_flam(fnufile, outfile=None, plot=False):
     Parameters
     ----------
     fnufile : str
-        Name of the input file with the F_nu spectrum
+        Name of the input file with the F_nu spectrum. This can be a Coadd1d file or a spec1d file. Currently only Coadd1d files
+        are supported.
     outfile : str
         Name of the output file with the F_lambda spectrum. If None, the output file is written to the same directory with the same name as 
         fnufile, but with the _Flam.fits suffix.
@@ -365,29 +393,28 @@ def jwst_fnu_to_flam(fnufile, outfile=None, plot=False):
 
     _outfile = os.path.join(os.path.dirname(fnufile), os.path.basename(fnufile).replace('.fits', '_Flam.fits')) if outfile is None else outfile
     spec_table = Table.read(fnufile, format='fits')
-
     flux_MJy = spec_table['flux']*u.MJy
     wave = spec_table['wave_grid_mid']*u.angstrom
     sigma_MJy = np.sqrt(inverse(spec_table['ivar']))*u.MJy
     gpm = spec_table['mask'].astype(bool)
-    nu_to_flam_factor =const.c/np.square(wave)
-    factor = nu_to_flam_factor
 
-    F_lam = (flux_MJy*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom).value/1e-17
-    sigma_lam = (sigma_MJy*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom).value/1e-17
+    _f_lam, _sigma_lam = fnu_to_flam(wave, flux_MJy, sigma_MJy)
+
+    f_lam = _f_lam.value/1e-17
+    sigma_lam = _sigma_lam.value/1e-17
 
     # Create an output table
-    spec_table['F_lam'] = F_lam
+    spec_table['F_lam'] = f_lam
     spec_table['sigma_lam'] = sigma_lam
     # Write it out to disk
     spec_table.write(_outfile, overwrite=True) 
     
     if plot: 
-        F_lam_sm = fast_running_median(F_lam*gpm, 10)
+        f_lam_sm = fast_running_median(f_lam*gpm, 10)
         sigma_lam_sm = fast_running_median(sigma_lam*gpm, 10)
         ymin = -1.2*np.max(sigma_lam_sm)
-        ymax = 1.2*np.max(F_lam_sm)
-        plt.plot(wave, F_lam, drawstyle='steps-mid', label='JWST')
+        ymax = 1.2*np.max(f_lam_sm)
+        plt.plot(wave, f_lam, drawstyle='steps-mid', label='JWST')
         plt.ylim([ymin, ymax])
         plt.ylabel(r'$F_\lambda$ (10$^{-17}$ erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)')
         plt.xlabel(r'$\lambda$ ($\AA$)')

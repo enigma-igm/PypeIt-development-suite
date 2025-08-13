@@ -270,6 +270,20 @@ def jwst_targets(progid, disperser, target, slit=None):
 
             exp_list.append([uncalfile1, uncalfile2, uncalfile3])
 
+        elif '4713' in progid:
+            if 'J0100+2802' in target:
+                ## Prorgram for Slit Loss Characterization for MSA shutters
+                # PRISM data
+                rawpath_level2 = '/Users/joe/jwst_redux/Raw/NIRSPEC_MSA/4713/'
+                redux_dir = os.path.join('/Users/joe/jwst_redux/redux/NIRSPEC_MSA/4713/J0100+2802/')
+
+                if disperser == '140M':
+                    if slit == 'S200A1':
+                        uncalfile1 = os.path.join(rawpath_level2, 'jw04713002001_03101_00002_' + detname + '_uncal.fits')  # msa_metadata_id  = 1
+                        uncalfile2 = os.path.join(rawpath_level2, 'jw04713002001_03101_00003_' + detname + '_uncal.fits')  
+                exp_list.append([uncalfile1, uncalfile2])           
+
+
         if '1764' in progid:
             rawpath_level2 = '/Users/joe/jwst_redux/Raw/NIRSPEC_FS/1764/level_12/01764/'
             redux_dir = os.path.join('/Users/joe/jwst_redux/redux/NIRSPEC_FS/1764/', target)
@@ -453,6 +467,14 @@ def jwst_targets(progid, disperser, target, slit=None):
                 else: 
                     raise ValueError("Disperser not recognized: {}".format(disperser))
                 indx_range = range(1,3)
+            if 'J0443-5332' in target: 
+                if disperser == '140H': 
+                    prefix = 'jw09180040001_03102_000' if slit == 'S200A1' else 'jw09180040001_03104_000'
+                elif disperser == '235H':
+                    prefix = 'jw09180040001_03107_000' if slit == 'S200A1' else 'jw09180040001_03105_000'
+                else: 
+                    raise ValueError("Disperser not recognized: {}".format(disperser))
+                indx_range = range(1,2)
 
             for ii in indx_range: 
                 file_list.append(os.path.join(rawpath_level2, prefix + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
