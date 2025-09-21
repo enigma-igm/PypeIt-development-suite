@@ -1,18 +1,22 @@
+import os
 from astroquery.mast import MastMissionsClass
 
+
 # --- setup (use your real token locally, not in shared code) ---
-token = "9465311c9b2544afaa8e8c1917f63f5a"
+token = "06dc7f8a19f14ce88afd8d7824383e61"
 MastClass = MastMissionsClass(mission='JWST')
 MastClass.login(token=token)
 
+#program = '7491' # Matusoka Galaxy program, cycle 4
+#program = '3417' # Matsuoka T2 program 
 program = '9180'  # '9180' = fixed-slit (DW); '4713' = MSA (Masquerade)
 #program = '4713'  # '9180' = fixed-slit (DW); '4713' = MSA (Masquerade)
 
 
 # --- program-specific config (keeps your originals) ---
-if program == '9180':
+if program == '9180' or program == '3417' or program == '7491':
     exptype_sci = 'NRS_FIXEDSLIT'     # FS science
-    download_dir = '/Users/joe/jwst_redux/Raw/NIRSPEC_FS/9180'
+    download_dir = os.path.join('/Users/joe/jwst_redux/Raw/NIRSPEC_FS/', program)
     do_ta = True                      # only FS gets TA
 elif program == '4713':
     exptype_sci = 'NRS_MSASPEC'       # MSA science
@@ -26,20 +30,19 @@ else:
 # ----------------------------
 all_rows = MastClass.query_criteria(program=program)
 
-# ----------------------------
-# 1) SCIENCE (like before)
-# ----------------------------
-datasets_sci = MastClass.query_criteria(
-    program=program,
-    exp_type=exptype_sci,
-    productLevel='1b'  # lean: Level 1b only
-)
+datasets_sci = all_rows 
+#datasets_sci = MastClass.query_criteria(
+#    program=program,
+#    exp_type=exptype_sci)
+# Removing produclevel restriction to download things that may have problems
+#    productLevel='1b'  # lean: Level 1b only
+#)
 
 products_sci = MastClass.get_unique_product_list(datasets_sci) if len(datasets_sci) > 0 else []
 
 if exptype_sci == 'NRS_FIXEDSLIT':
     filtered_sci = MastClass.filter_products(
-        products_sci, file_suffix=['_uncal'], extension='fits'
+        products_sci, file_suffix=['_uncal', '_rate'], extension='fits'
     )
 else:
     filtered_sci = MastClass.filter_products(
@@ -47,7 +50,7 @@ else:
     )
 
 if len(filtered_sci) > 0:
-    MastClass.download_products(filtered_sci, download_dir=download_dir, verbose=True)
+    MastClass.download_products(filtered_sci, download_dir=download_dir, verbose=True, mrp_only=False)
 else:
     print(f"[SCI] No products matched for program {program}.")
 
@@ -76,6 +79,6 @@ if do_ta:
         )
 
         if len(keep_wata) > 0:
-            MastClass.download_products(keep_wata, download_dir=download_dir, verbose=True)
+            MastClass.download_products(keep_wata, download_dir=download_dir, verbose=True, mrp_only=False)
         else:
             print(f"[TA] TA rows exist, but no matching WATA products with desired suffixes in program {program}.")

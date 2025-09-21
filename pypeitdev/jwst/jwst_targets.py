@@ -475,6 +475,26 @@ def jwst_targets(progid, disperser, target, slit=None):
                 else: 
                     raise ValueError("Disperser not recognized: {}".format(disperser))
                 indx_range = range(1,2)
+            if 'J0412-5638' in target: 
+                if disperser == '140H': 
+                    prefix = 'jw09180043001_03102_000' if slit == 'S200A1' else 'jw09180043001_03104_000'
+                elif disperser == '235H':
+                    prefix = 'jw09180043001_03107_000' if slit == 'S200A1' else 'jw09180043001_03105_000'
+                elif disperser == '395M':
+                    prefix = 'jw09180055001_03102_000'
+                else: 
+                    raise ValueError("Disperser not recognized: {}".format(disperser))
+                indx_range = range(1,2)            
+            if 'J0522-5127' in target: 
+                if disperser == '140H': 
+                    prefix = 'jw09180046001_03102_000' if slit == 'S200A1' else 'jw09180046001_03104_000'
+                elif disperser == '235H':
+                    prefix = 'jw09180046001_03107_000' if slit == 'S200A1' else 'jw09180046001_03105_000'
+                elif disperser == '395M':
+                    prefix = 'jw09180058001_03102_000'
+                else: 
+                    raise ValueError("Disperser not recognized: {}".format(disperser))
+                indx_range = range(1,2)            
 
             for ii in indx_range: 
                 file_list.append(os.path.join(rawpath_level2, prefix + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
@@ -534,7 +554,51 @@ def jwst_targets(progid, disperser, target, slit=None):
                 for ii in range(1,4):
                     file_list.append(os.path.join(rawpath_level2, 'jw01967004001_05101_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
                 exp_list.append(file_list)      
-                                               
+
+
+        if '3417' in progid:
+            rawpath_level2 = '/Users/joe/jwst_redux/Raw/NIRSPEC_FS/3417/'
+            redux_dir = os.path.join('/Users/joe/jwst_redux/redux/NIRSPEC_FS/3417/', target)
+            # All of these are with slit S200A2
+            file_list = []
+            if 'J0844+0226' in target:
+                for ii in range(1,6): 
+                    file_list.append(os.path.join(rawpath_level2, 'jw03417002001_03102_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
+                exp_list.append(file_list)
+            if 'J0905+0300' in target:
+                for ii in range(1,6):
+                    file_list.append(os.path.join(rawpath_level2, 'jw03417008001_03102_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
+                exp_list.append(file_list)
+            if 'J0935-0110' in target:
+                for ii in range(1,6):
+                    file_list.append(os.path.join(rawpath_level2, 'jw03417003001_04102_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
+                exp_list.append(file_list)
+            if 'J0853+0139' in target:
+                for ii in range(1,6):
+                    file_list.append(os.path.join(rawpath_level2, 'jw03417010001_03102_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
+                exp_list.append(file_list)               
+            if 'J1423+0206' in target:
+                for ii in range(1,6):
+                    file_list.append(os.path.join(rawpath_level2, 'jw03417006001_03102_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
+                exp_list.append(file_list)               
+            if 'J1254-0014' in target:
+                for ii in range(1,6):
+                    file_list.append(os.path.join(rawpath_level2, 'jw03417004001_03102_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
+                exp_list.append(file_list)
+            if 'J0207+0238' in target:
+                for ii in range(1,6):
+                    file_list.append(os.path.join(rawpath_level2, 'jw03417005001_06101_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
+                exp_list.append(file_list)
+            if 'J1416+0015' in target:
+                for ii in range(1,6):
+                    file_list.append(os.path.join(rawpath_level2, 'jw03417009001_04102_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
+                exp_list.append(file_list)
+            if 'J1423-0018' in target:
+                for ii in range(1,6):
+                    file_list.append(os.path.join(rawpath_level2, 'jw03417001001_03102_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
+                exp_list.append(file_list)
+                                                                                              
+
         if '1117' in progid:
             if 'PRISM' in disperser:
                 # PRISM data
@@ -595,6 +659,7 @@ def jwst_targets(progid, disperser, target, slit=None):
                 uncalfile2 = os.path.join(rawpath_level2, 'jw01671001001_03101_00003_' + detname + '_uncal.fits')
                 uncalfile3 = os.path.join(rawpath_level2, 'jw01671001001_03101_00004_' + detname + '_uncal.fits')
                 exp_list.append([uncalfile1, uncalfile2, uncalfile3])
+
 
     return exp_list, redux_dir, rawpath_level2
     
