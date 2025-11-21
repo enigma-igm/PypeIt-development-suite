@@ -342,7 +342,7 @@ def jwst_proc(msa_data, slit_slice, finitemask, flatfield, pathloss, barshadow, 
         zero_not_finite(count_scale), rn2_img
 
 
-def fnu_to_flam(wave, f_nu, sigma_nu): 
+def fnu_to_flam(wave, f_nu, sigma_nu, surface_brightness=False): 
     """
     Utility routine to convert a spectrum in F_nu to F_lambda using astropy units
     
@@ -365,10 +365,62 @@ def fnu_to_flam(wave, f_nu, sigma_nu):
     """
     nu_to_flam_factor =const.c/np.square(wave)
     factor = nu_to_flam_factor
+    if surface_brightness:
+        # I think this is the area of a NIRSpec pixel in steradians
+        pixel_area = 4.795157053786361e-13*u.steradian
+        factor = pixel_area*nu_to_flam_factor
+    
     f_lam = (f_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)    
     sigma_lam = (sigma_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)
     
     return f_lam, sigma_lam  
+
+def _jwst_fnu_to_flam(fnufile):
+    """
+    Reader a PypeIt Coadd1d or spec1d JWST spectrum in F_nu and convert to F_lambda.
+    
+    Parameters
+    ----------
+    fnufile : str
+        Name of the input file with the F_nu spectrum. This can be a Coadd1d file or a spec1d file. Currently only Coadd1d files
+        are supported.
+    outfile : str
+        Name of the output file with the F_lambda spectrum. If None, the output file is written to the same directory with the same name as 
+        fnufile, but with the _Flam.fits suffix.
+    plot : bool
+        If True, a plot of the F_lambda spectrum is displayed.
+    
+    Returns
+    -------
+    outfile : str
+        Name of the output file with the F_lambda spectrum.
+    """    
+
+    hdr = fits.getheader(fnufile, 1)
+    # Check whther this is a coadd1d file or a spec1d file
+    if 'DMODCLS' not in hdr: 
+            file_type ='coadd1d'        
+            spec_object = Table.read(fnufile, format='fits')
+            flux_MJy = spec_object['flux']*u.MJy
+            wave = spec_object['wave_grid_mid']*u.angstrom
+            sigma_MJy = np.sqrt(inverse(spec_object['ivar']))*u.MJy
+            gpm = spec_object['mask'].astype(bool)
+            surface_brightness=False
+    else: 
+            # TESTING
+            angle_unit = u.steradian
+            file_type ='spec1d'
+            spec_object = specobjs.SpecObjs.from_fitsfile(fnufile, chk_version=False)
+            flux_MJy = spec_object[0].OPT_COUNTS*u.MJy/angle_unit
+            wave = spec_object[0].OPT_WAVE*u.angstrom
+            sigma_MJy = spec_object[0].OPT_COUNTS_SIG*u.MJy/angle_unit
+            gpm = spec_object[0].OPT_MASK.astype(bool)
+            surface_brightness=True
+            
+
+    _f_lam, _sigma_lam = fnu_to_flam(wave, flux_MJy, sigma_MJy, surface_brightness=surface_brightness)    
+    return spec_object, wave, _f_lam, _sigma_lam, gpm
+    
 
 def jwst_fnu_to_flam(fnufile, outfile=None, plot=False):
     """
@@ -391,14 +443,11 @@ def jwst_fnu_to_flam(fnufile, outfile=None, plot=False):
         Name of the output file with the F_lambda spectrum.
     """
 
-    _outfile = os.path.join(os.path.dirname(fnufile), os.path.basename(fnufile).replace('.fits', '_Flam.fits')) if outfile is None else outfile
-    spec_table = Table.read(fnufile, format='fits')
-    flux_MJy = spec_table['flux']*u.MJy
-    wave = spec_table['wave_grid_mid']*u.angstrom
-    sigma_MJy = np.sqrt(inverse(spec_table['ivar']))*u.MJy
-    gpm = spec_table['mask'].astype(bool)
-
-    _f_lam, _sigma_lam = fnu_to_flam(wave, flux_MJy, sigma_MJy)
+    spec_table, wave, _f_lam, _sigma_lam, gpm = _jwst_fnu_to_flam(fnufile)
+    if isinstance(spec_table, specobjs.SpecObjs):
+        raise NotImplementedError("Conversion of spec1d files not yet implemented.")
+    else: 
+        _outfile = os.path.join(os.path.dirname(fnufile), os.path.basename(fnufile).replace('.fits', '_Flam.fits')) if outfile is None else outfile
 
     f_lam = _f_lam.value/1e-17
     sigma_lam = _sigma_lam.value/1e-17

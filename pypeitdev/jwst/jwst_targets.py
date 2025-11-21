@@ -495,6 +495,37 @@ def jwst_targets(progid, disperser, target, slit=None):
                 else: 
                     raise ValueError("Disperser not recognized: {}".format(disperser))
                 indx_range = range(1,2)            
+            if 'J0446-5700' in target: 
+                if disperser == '140H': 
+                    prefix = 'jw09180061001_03102_000' if slit == 'S200A1' else 'jw09180061001_03104_000'
+                elif disperser == '235H':
+                    prefix = 'jw09180061001_03107_000' if slit == 'S200A1' else 'jw09180061001_03105_000'
+                else: 
+                    raise ValueError("Disperser not recognized: {}".format(disperser))
+                indx_range = range(1,2)
+            if 'J0451-3426' in target: 
+                if disperser == '140H': 
+                    prefix = 'jw09180060001_04101_000' if slit == 'S200A1' else 'jw09180060001_06101_000'
+                elif disperser == '235H':
+                    prefix = 'jw09180060001_09101_000' if slit == 'S200A1' else 'jw09180060001_07101_000'
+                else: 
+                    raise ValueError("Disperser not recognized: {}".format(disperser))
+                indx_range = range(1,2)
+            if 'J0933+7427' in target: 
+                if disperser == '140H': 
+                    prefix = 'jw09180036001_03102_000' if slit == 'S200A1' else 'jw09180036001_03104_000'
+                elif disperser == '235H':
+                    prefix = 'jw09180036001_03107_000' if slit == 'S200A1' else 'jw09180036001_03105_000'
+                elif disperser == '395M':
+                    prefix = 'jw09180053001_03102_000'
+                else: 
+                    raise ValueError("Disperser not recognized: {}".format(disperser))
+                indx_range = range(1,2)     
+
+            else: 
+                raise ValueError("Target not recognized: {}".format(target))
+
+
 
             for ii in indx_range: 
                 file_list.append(os.path.join(rawpath_level2, prefix + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
