@@ -79,8 +79,7 @@ Attributes:
 
 from . import pypeit_tests
 from .setups import all_setups 
-from enum import Enum, IntEnum, auto
-import copy
+from enum import Enum, auto
 
 class TestPhase(Enum):
     """Enumeration for specifying the test phase that a test runs in.
@@ -149,6 +148,13 @@ _sensfunc = {
     'keck_deimos': {
         '900ZD_LVM_5500': [dict(std_file='spec1d_*Feige110*.fits',
                                 sens_file='keck_deimos_900zd_lvm_5500.sens')]},
+
+    'keck_hires': {
+        'J0100+2802_H204Hr_RED_C1_ECH_0.75_XD_1.69_1x2': [dict(std_file='spec1d_*20151214.16343*.fits',
+                                                          sens_file='keck_hires_RED_C1_ECH_0.75_XD_1.69_1x2_Feige110.sens')],
+        'J0100+2802_H204Hr_RED_C1_ECH_-0.82_XD_1.62_1x2': [dict(std_file='spec1d_*20151214.16715*.fits',
+                                                           sens_file='keck_hires_RED_C1_ECH_-0.82_XD_1.62_1x2_Feige110.sens')],
+                     },
     'keck_mosfire': {
         'Y_long': [dict(std_file='spec1d_*0064-GD71*.fits',
                         sens_file='keck_mosfire_Y_long.sens')]},
@@ -233,8 +239,13 @@ _coadd2d = {
     'keck_nires': {
         'ABBA_wstandard': [dict(coadd_file=True)]},
     'keck_nires': {
-        'ABBA_nostandard_faint': [dict(coadd_file=True)]}
+        'ABBA_nostandard_faint': [dict(coadd_file=True)]},
+    'soar_goodman_blue': {
+        'M1': [dict(coadd_file=True)]}
     }
+
+# TODO: Test the pypeit_coadd_datacube setups!
+_coadd3d = {}
 
 _telluric = {
     'gemini_gnirs_echelle': {
