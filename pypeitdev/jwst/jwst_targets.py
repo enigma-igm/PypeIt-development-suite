@@ -200,12 +200,17 @@ def jwst_targets(progid, disperser, target, slit=None):
                     rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/GO4233/40579/PRISM'
                     redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/4233/PRISM', target)
 
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw04233001001_03101_00002_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw04233001001_03101_00003_' + detname + '_uncal.fits')
+                    uncalfile3 = os.path.join(rawpath_level2, 'jw04233001001_03101_00004_' + detname + '_uncal.fits')
+
                     # uncalfile1 = os.path.join(rawpath_level2, 'jw04233001002_03101_00002_' + detname + '_uncal.fits')
                     # uncalfile2 = os.path.join(rawpath_level2, 'jw04233001002_03101_00003_' + detname + '_uncal.fits')
                     # uncalfile3 = os.path.join(rawpath_level2, 'jw04233001002_03101_00004_' + detname + '_uncal.fits')
-                    uncalfile1 = os.path.join(rawpath_level2, 'jw04233001003_03101_00002_' + detname + '_uncal.fits')
-                    uncalfile2 = os.path.join(rawpath_level2, 'jw04233001003_03101_00003_' + detname + '_uncal.fits')
-                    uncalfile3 = os.path.join(rawpath_level2, 'jw04233001003_03101_00004_' + detname + '_uncal.fits')
+
+                    # uncalfile1 = os.path.join(rawpath_level2, 'jw04233001003_03101_00002_' + detname + '_uncal.fits')
+                    # uncalfile2 = os.path.join(rawpath_level2, 'jw04233001003_03101_00003_' + detname + '_uncal.fits')
+                    # uncalfile3 = os.path.join(rawpath_level2, 'jw04233001003_03101_00004_' + detname + '_uncal.fits')
 
 
                     exp_list.append([uncalfile1, uncalfile2, uncalfile3])
@@ -277,15 +282,71 @@ def jwst_targets(progid, disperser, target, slit=None):
                     rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/2561/PRISM'
                     redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/2561/PRISM', target)
 
-                    uncalfile1 = os.path.join(rawpath_level2, 'jw02561002001_03101_00002_' + detname + '_uncal.fits')
-                    uncalfile2 = os.path.join(rawpath_level2, 'jw02561002001_03101_00003_' + detname + '_uncal.fits')
-                    uncalfile3 = os.path.join(rawpath_level2, 'jw02561002001_03101_00004_' + detname + '_uncal.fits')
-                    uncalfile4 = os.path.join(rawpath_level2, 'jw02561002001_03101_00005_' + detname + '_uncal.fits')
-                    uncalfile5 = os.path.join(rawpath_level2, 'jw02561002001_03101_00006_' + detname + '_uncal.fits')
-                    uncalfile6 = os.path.join(rawpath_level2, 'jw02561002001_03101_00007_' + detname + '_uncal.fits')
+                    # uncalfile1 = os.path.join(rawpath_level2, 'jw02561002001_03101_00002_' + detname + '_uncal.fits')
+                    # uncalfile2 = os.path.join(rawpath_level2, 'jw02561002001_03101_00003_' + detname + '_uncal.fits')
+                    # uncalfile3 = os.path.join(rawpath_level2, 'jw02561002001_03101_00004_' + detname + '_uncal.fits')
+                    # uncalfile4 = os.path.join(rawpath_level2, 'jw02561002001_03101_00005_' + detname + '_uncal.fits')
+                    # uncalfile5 = os.path.join(rawpath_level2, 'jw02561002001_03101_00006_' + detname + '_uncal.fits')
+                    # uncalfile6 = os.path.join(rawpath_level2, 'jw02561002001_03101_00007_' + detname + '_uncal.fits')
 
-                exp_list.append([uncalfile1, uncalfile2, uncalfile3, 
-                                uncalfile4, uncalfile5, uncalfile6])
+                    # uncalfile1 = os.path.join(rawpath_level2, 'jw02561002001_05101_00001_' + detname + '_uncal.fits')
+                    # uncalfile2 = os.path.join(rawpath_level2, 'jw02561002001_05101_00002_' + detname + '_uncal.fits')
+                    # uncalfile3 = os.path.join(rawpath_level2, 'jw02561002001_05101_00003_' + detname + '_uncal.fits')
+                    # uncalfile4 = os.path.join(rawpath_level2, 'jw02561002001_05101_00004_' + detname + '_uncal.fits')
+                    # uncalfile5 = os.path.join(rawpath_level2, 'jw02561002001_05101_00005_' + detname + '_uncal.fits')
+                    # uncalfile6 = os.path.join(rawpath_level2, 'jw02561002001_05101_00006_' + detname + '_uncal.fits')
+
+                    # uncalfile1 = os.path.join(rawpath_level2, 'jw02561002002_03101_00002_' + detname + '_uncal.fits')
+                    # uncalfile2 = os.path.join(rawpath_level2, 'jw02561002002_03101_00003_' + detname + '_uncal.fits')
+                    # uncalfile3 = os.path.join(rawpath_level2, 'jw02561002002_03101_00004_' + detname + '_uncal.fits')
+                    # uncalfile4 = os.path.join(rawpath_level2, 'jw02561002002_03101_00005_' + detname + '_uncal.fits')
+                    # uncalfile5 = os.path.join(rawpath_level2, 'jw02561002002_03101_00006_' + detname + '_uncal.fits')
+                    # uncalfile6 = os.path.join(rawpath_level2, 'jw02561002002_03101_00007_' + detname + '_uncal.fits')
+
+                    # uncalfile1 = os.path.join(rawpath_level2, 'jw02561002003_03101_00002_' + detname + '_uncal.fits')
+                    # uncalfile2 = os.path.join(rawpath_level2, 'jw02561002003_03101_00003_' + detname + '_uncal.fits')
+                    # uncalfile3 = os.path.join(rawpath_level2, 'jw02561002003_03101_00004_' + detname + '_uncal.fits')
+                    # uncalfile4 = os.path.join(rawpath_level2, 'jw02561002003_03101_00005_' + detname + '_uncal.fits')
+                    # uncalfile5 = os.path.join(rawpath_level2, 'jw02561002003_03101_00006_' + detname + '_uncal.fits')
+                    # uncalfile6 = os.path.join(rawpath_level2, 'jw02561002003_03101_00007_' + detname + '_uncal.fits')
+
+                    # THIS WORKS FOR A2744-45924, need to check others
+                    # uncalfile1 = os.path.join(rawpath_level2, 'jw02561002004_03101_00002_' + detname + '_uncal.fits')
+                    # uncalfile2 = os.path.join(rawpath_level2, 'jw02561002004_03101_00003_' + detname + '_uncal.fits')
+                    # uncalfile3 = os.path.join(rawpath_level2, 'jw02561002004_03101_00004_' + detname + '_uncal.fits')
+                    # uncalfile4 = os.path.join(rawpath_level2, 'jw02561002004_03101_00005_' + detname + '_uncal.fits')
+                    # uncalfile5 = os.path.join(rawpath_level2, 'jw02561002004_03101_00006_' + detname + '_uncal.fits')
+                    # uncalfile6 = os.path.join(rawpath_level2, 'jw02561002004_03101_00007_' + detname + '_uncal.fits')
+
+                    # THIS WORKS FOR A2744-45924, need to check others
+                    # uncalfile1 = os.path.join(rawpath_level2, 'jw02561002005_03101_00002_' + detname + '_uncal.fits')
+                    # uncalfile2 = os.path.join(rawpath_level2, 'jw02561002005_03101_00003_' + detname + '_uncal.fits')
+                    # uncalfile3 = os.path.join(rawpath_level2, 'jw02561002005_03101_00004_' + detname + '_uncal.fits')
+                    # uncalfile4 = os.path.join(rawpath_level2, 'jw02561002005_03101_00005_' + detname + '_uncal.fits')
+                    # uncalfile5 = os.path.join(rawpath_level2, 'jw02561002005_03101_00006_' + detname + '_uncal.fits')
+                    # uncalfile6 = os.path.join(rawpath_level2, 'jw02561002005_03101_00007_' + detname + '_uncal.fits')
+
+                    uncalfile1 = os.path.join(rawpath_level2, 'jw02561002005_11101_00001_' + detname + '_uncal.fits')
+                    uncalfile2 = os.path.join(rawpath_level2, 'jw02561002005_11101_00002_' + detname + '_uncal.fits')
+                    uncalfile3 = os.path.join(rawpath_level2, 'jw02561002005_11101_00003_' + detname + '_uncal.fits')
+                    uncalfile4 = os.path.join(rawpath_level2, 'jw02561002005_11101_00004_' + detname + '_uncal.fits')
+                    uncalfile5 = os.path.join(rawpath_level2, 'jw02561002005_11101_00005_' + detname + '_uncal.fits')
+                    uncalfile6 = os.path.join(rawpath_level2, 'jw02561002005_11101_00006_' + detname + '_uncal.fits')
+
+                exp_list.append([uncalfile1, uncalfile2, uncalfile3, uncalfile4, uncalfile5, uncalfile6])
+
+                    # THIS WORKS FOR A2744-45924, need to check others
+                    # uncalfile1 = os.path.join(rawpath_level2, 'jw02561002005_15101_00002_' + detname + '_uncal.fits')
+                    # uncalfile2 = os.path.join(rawpath_level2, 'jw02561002005_15101_00003_' + detname + '_uncal.fits')
+                    # uncalfile3 = os.path.join(rawpath_level2, 'jw02561002005_15101_00004_' + detname + '_uncal.fits')
+                    # uncalfile4 = os.path.join(rawpath_level2, 'jw02561002005_15101_00005_' + detname + '_uncal.fits')
+                    # uncalfile5 = os.path.join(rawpath_level2, 'jw02561002005_15101_00006_' + detname + '_uncal.fits')
+                    # uncalfile6 = os.path.join(rawpath_level2, 'jw02561002005_15101_00007_' + detname + '_uncal.fits')
+
+
+                #exp_list.append([uncalfile1, uncalfile2, uncalfile3, uncalfile4, uncalfile5, uncalfile6])
+                #exp_list.append([uncalfile1, uncalfile3, uncalfile5])
+                #exp_list.append([uncalfile2, uncalfile4, uncalfile6])
 
         
         if '2073' in progid:
