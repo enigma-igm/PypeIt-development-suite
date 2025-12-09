@@ -333,8 +333,6 @@ def jwst_targets(progid, disperser, target, slit=None):
                     uncalfile5 = os.path.join(rawpath_level2, 'jw02561002005_11101_00005_' + detname + '_uncal.fits')
                     uncalfile6 = os.path.join(rawpath_level2, 'jw02561002005_11101_00006_' + detname + '_uncal.fits')
 
-                exp_list.append([uncalfile1, uncalfile2, uncalfile3, uncalfile4, uncalfile5, uncalfile6])
-
                     # THIS WORKS FOR A2744-45924, need to check others
                     # uncalfile1 = os.path.join(rawpath_level2, 'jw02561002005_15101_00002_' + detname + '_uncal.fits')
                     # uncalfile2 = os.path.join(rawpath_level2, 'jw02561002005_15101_00003_' + detname + '_uncal.fits')
@@ -343,10 +341,10 @@ def jwst_targets(progid, disperser, target, slit=None):
                     # uncalfile5 = os.path.join(rawpath_level2, 'jw02561002005_15101_00006_' + detname + '_uncal.fits')
                     # uncalfile6 = os.path.join(rawpath_level2, 'jw02561002005_15101_00007_' + detname + '_uncal.fits')
 
-
                 #exp_list.append([uncalfile1, uncalfile2, uncalfile3, uncalfile4, uncalfile5, uncalfile6])
                 #exp_list.append([uncalfile1, uncalfile3, uncalfile5])
                 #exp_list.append([uncalfile2, uncalfile4, uncalfile6])
+                exp_list.append([uncalfile1, uncalfile2, uncalfile3])
 
         
         if '2073' in progid:
@@ -955,7 +953,6 @@ def jwst_targets(progid, disperser, target, slit=None):
                 uncalfile2 = os.path.join(rawpath_level2, 'jw01671001001_03101_00003_' + detname + '_uncal.fits')
                 uncalfile3 = os.path.join(rawpath_level2, 'jw01671001001_03101_00004_' + detname + '_uncal.fits')
                 exp_list.append([uncalfile1, uncalfile2, uncalfile3])
-
 
     return exp_list, redux_dir, rawpath_level2
     
