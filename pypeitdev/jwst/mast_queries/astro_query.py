@@ -3,14 +3,11 @@ from astroquery.mast import MastMissionsClass
 
 
 # --- setup (use your real token locally, not in shared code) ---
-token = "0f232a0c9a004bbc8bfca3944b464fa3"
+token = "f6707ad3e4f14ad0a60f00c05c6b4aa7"
 MastClass = MastMissionsClass(mission='JWST')
 MastClass.login(token=token)
 
-#program = '7491' # Matusoka Galaxy program, cycle 4
-#program = '3417' # Matsuoka T2 program 
-program = '9180'  # '9180' = fixed-slit (DW); '4713' = MSA (Masquerade)
-#program = '4713'  # '9180' = fixed-slit (DW); '4713' = MSA (Masquerade)
+program = '5664' # JWST IFU GO program for LRDs
 
 
 # --- program-specific config (keeps your originals) ---
@@ -21,6 +18,10 @@ if program == '9180' or program == '3417' or program == '7491':
 elif program == '4713':
     exptype_sci = 'NRS_MSASPEC'       # MSA science
     download_dir = '/Users/joe/jwst_redux/Raw/NIRSPEC_MSA/4713'
+    do_ta = False
+elif program == '5664':
+    exptype_sci = 'NRS_IFU'       # IFU science
+    download_dir = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_IFU/5664/'
     do_ta = False
 else:
     raise ValueError(f"Unknown program: {program}")
@@ -45,8 +46,12 @@ if exptype_sci == 'NRS_FIXEDSLIT':
         products_sci, file_suffix=['_uncal', '_rate'], extension='fits'
     )
 else:
+    # restrict products to one pointing
+    target_obs = 'jw05664002001_02101' # For GS-13971 which is the only one available now
+    mask = [target_obs in fn for fn in products_sci['filename']]
+    products_sci_subset = products_sci[mask]
     filtered_sci = MastClass.filter_products(
-        products_sci, file_suffix=['_uncal', '_rate', '_msa'], extension='fits'
+        products_sci_subset, file_suffix=['_rate', '_msa'], extension='fits'
     )
 
 if len(filtered_sci) > 0:
