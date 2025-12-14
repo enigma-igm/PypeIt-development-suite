@@ -363,19 +363,27 @@ def fnu_to_flam(wave, f_nu, sigma_nu, surface_brightness=False):
         Error array in F_lambda units. We will convert to erg/s/cm^2/Angstrom. 
     
     """
+
+    
     nu_to_flam_factor =const.c/np.square(wave)
     factor = nu_to_flam_factor
     if surface_brightness:
+        angle_unit = u.steradian        
+        _f_nu = f_nu/angle_unit
+        _sigma_nu = sigma_nu/angle_unit
         # I think this is the area of a NIRSpec pixel in steradians
         pixel_area = 4.795157053786361e-13*u.steradian
         factor = pixel_area*nu_to_flam_factor
+    else: 
+        _f_nu = f_nu
+        _sigma_nu = sigma_nu
     
-    f_lam = (f_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)    
-    sigma_lam = (sigma_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)
+    f_lam = (_f_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)    
+    sigma_lam = (_sigma_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)
     
     return f_lam, sigma_lam  
 
-def _jwst_fnu_to_flam(fnufile):
+def _jwst_fnu_to_flam(fnufile, surface_brightness=False):
     """
     Reader a PypeIt Coadd1d or spec1d JWST spectrum in F_nu and convert to F_lambda.
     
@@ -387,6 +395,8 @@ def _jwst_fnu_to_flam(fnufile):
     outfile : str
         Name of the output file with the F_lambda spectrum. If None, the output file is written to the same directory with the same name as 
         fnufile, but with the _Flam.fits suffix.
+    surface_brightness : bool
+        If True, the spectrum is in surface brightness units. If False, the spectrum is in flux density units.
     plot : bool
         If True, a plot of the F_lambda spectrum is displayed.
     
@@ -398,25 +408,26 @@ def _jwst_fnu_to_flam(fnufile):
 
     hdr = fits.getheader(fnufile, 1)
     # Check whther this is a coadd1d file or a spec1d file
-    if 'DMODCLS' not in hdr: 
-            file_type ='coadd1d'        
-            spec_object = Table.read(fnufile, format='fits')
-            flux_MJy = spec_object['flux']*u.MJy
-            wave = spec_object['wave_grid_mid']*u.angstrom
-            sigma_MJy = np.sqrt(inverse(spec_object['ivar']))*u.MJy
-            gpm = spec_object['mask'].astype(bool)
-            surface_brightness=False
+    try: 
+        file_type = hdr['DMODCLS']
+    except KeyError:
+        file_type = 'Spec1D'
+
+    
+    if file_type == 'OneSpec': 
+        spec_object = Table.read(fnufile, format='fits')
+        flux_MJy = spec_object['flux']*u.MJy
+        wave = spec_object['wave_grid_mid']*u.angstrom
+        sigma_MJy = np.sqrt(inverse(spec_object['ivar']))*u.MJy
+        gpm = spec_object['mask'].astype(bool)
     else: 
-            # TESTING
-            angle_unit = u.steradian
-            file_type ='spec1d'
-            spec_object = specobjs.SpecObjs.from_fitsfile(fnufile, chk_version=False)
-            flux_MJy = spec_object[0].OPT_COUNTS*u.MJy/angle_unit
-            wave = spec_object[0].OPT_WAVE*u.angstrom
-            sigma_MJy = spec_object[0].OPT_COUNTS_SIG*u.MJy/angle_unit
-            gpm = spec_object[0].OPT_MASK.astype(bool)
-            surface_brightness=True
-            
+        file_type ='spec1d'
+        spec_object = specobjs.SpecObjs.from_fitsfile(fnufile, chk_version=False)
+        flux_MJy = spec_object[0].OPT_COUNTS*u.MJy
+        wave = spec_object[0].OPT_WAVE*u.angstrom
+        sigma_MJy = spec_object[0].OPT_COUNTS_SIG*u.MJy
+        gpm = spec_object[0].OPT_MASK.astype(bool)
+
 
     _f_lam, _sigma_lam = fnu_to_flam(wave, flux_MJy, sigma_MJy, surface_brightness=surface_brightness)    
     return spec_object, wave, _f_lam, _sigma_lam, gpm

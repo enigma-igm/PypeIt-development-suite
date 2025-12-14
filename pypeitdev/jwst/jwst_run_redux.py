@@ -967,7 +967,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
         'flat_field': {'save_interpolated_flat': True}, 
          # Forces to always run the barshadow step. Default is to apply  barshadow only for extended sources, which means slit won't be flat
         'barshadow': {'source_type': 'EXTENDED'},  
-        'nsclean': {'skip': True, 'save_results': False},
+#        'nsclean': {'skip': True, 'save_results': False},
     }
     # So the nsclean is now being done via clean_flicker_noise in the Det1 pipeline. 
 

@@ -3,7 +3,7 @@ from astroquery.mast import MastMissionsClass
 
 
 # --- setup (use your real token locally, not in shared code) ---
-token = "0f232a0c9a004bbc8bfca3944b464fa3"
+token = "7a6a4e149ab34a0a8659daaf53deb92b"
 MastClass = MastMissionsClass(mission='JWST')
 MastClass.login(token=token)
 
@@ -50,7 +50,7 @@ else:
     )
 
 if len(filtered_sci) > 0:
-    MastClass.download_products(filtered_sci, download_dir=download_dir, verbose=True, mrp_only=False)
+    MastClass.download_products(filtered_sci, download_dir=download_dir, verbose=True)
 else:
     print(f"[SCI] No products matched for program {program}.")
 
@@ -79,6 +79,6 @@ if do_ta:
         )
 
         if len(keep_wata) > 0:
-            MastClass.download_products(keep_wata, download_dir=download_dir, verbose=True, mrp_only=False)
+            MastClass.download_products(keep_wata, download_dir=download_dir, verbose=True)
         else:
             print(f"[TA] TA rows exist, but no matching WATA products with desired suffixes in program {program}.")
