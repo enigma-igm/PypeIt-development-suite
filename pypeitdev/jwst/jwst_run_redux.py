@@ -384,9 +384,10 @@ class DitherOffsets:
                     x0, y0 = (nx - 1)/2.0, (ny - 1)/2.0
 
                     # evaluate WCS at subimage center and +1 pix in x and y
-                    c0, lam0  = wcs(x0,       y0)
-                    cx, lamx1 = wcs(x0 + 1.0, y0)
-                    cy, lamy1 = wcs(x0,       y0 + 1.0)
+                    # Using APE 14 pixel_to_world interface (returns SkyCoord, SpectralCoord)
+                    c0, lam0  = wcs.pixel_to_world(x0,       y0)
+                    cx, lamx1 = wcs.pixel_to_world(x0 + 1.0, y0)
+                    cy, lamy1 = wcs.pixel_to_world(x0,       y0 + 1.0)
 
                     asec_per_pix_x = c0.separation(cx).to(u.arcsec).value
                     asec_per_pix_y = c0.separation(cy).to(u.arcsec).value
