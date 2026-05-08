@@ -886,6 +886,32 @@ def jwst_targets(progid, disperser, target, slit=None):
                 else: 
                     raise ValueError("Disperser not recognized: {}".format(disperser))
                 indx_range = range(1,2)     
+            if 'J2210+0304' in target: 
+                if disperser == '140H': 
+                    prefix = 'jw09180033001_03102_000' if slit == 'S200A1' else 'jw09180033001_03104_000'
+                elif disperser == '235H':
+                    prefix = 'jw09180033001_03107_000' if slit == 'S200A1' else 'jw09180033001_03105_000'
+                else: 
+                    raise ValueError("Disperser not recognized: {}".format(disperser))
+                indx_range = range(1,2)
+            if 'J2336+1842' in target: 
+                if disperser == '140H': 
+                    prefix = 'jw09180004001_04102_000' if slit == 'S200A1' else 'jw09180004001_04104_000'
+                elif disperser == '235H':
+                    prefix = 'jw09180004001_04107_000' if slit == 'S200A1' else 'jw09180004001_04105_000'
+                else: 
+                    raise ValueError("Disperser not recognized: {}".format(disperser))
+                indx_range = range(1,2)
+            if 'J1355+7000' in target: 
+                if disperser == '140H': 
+                    prefix = 'jw09180045001_03102_000' if slit == 'S200A1' else 'jw09180045001_03104_000'
+                elif disperser == '235H':
+                    prefix = 'jw09180045001_03107_000' if slit == 'S200A1' else 'jw09180045001_03105_000'
+                elif disperser == '395M':
+                    prefix = 'jw09180057001_03102_000'
+                else: 
+                    raise ValueError("Disperser not recognized: {}".format(disperser))
+                indx_range = range(1,2)     
 
             else: 
                 raise ValueError("Target not recognized: {}".format(target))

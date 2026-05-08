@@ -34,7 +34,8 @@ from pypeit import specobjs
 from pypeit.utils import inverse, fast_running_median, nan_mad_std
 
 from pypeit.spectrographs.util import load_spectrograph
-from pypeit import msgs
+from pypeit import log
+from pypeit import PypeItError
 from pypeit import spec2dobj
 
 
@@ -106,7 +107,7 @@ def validate_redux_input(reduce_input, name):
     elif reduce_input is None:
         _reduce_input = None
     else: 
-        msgs.error(f'{name} must be a string or a list of strings.')
+        raise PypeItError(f'{name} must be a string or a list of strings.')
         
     return _reduce_input
     
@@ -114,7 +115,7 @@ def validate_redux_input(reduce_input, name):
 def validate_interpolatedflat_files(intflat_fs_output_files, intflat_output_files, detector):
     """
     Utility method to validate the interpolated flat files for FS slits.
-    
+
     Parameters
     ----------
     intflat_fs_output_files : list
@@ -123,17 +124,17 @@ def validate_interpolatedflat_files(intflat_fs_output_files, intflat_output_file
         List of interpolated flat files for MOS slits.
     detector : str
         The detector name, i.e. 'nrs1' or 'nrs2'.
-    
+
     Returns
     -------
     merge_fs : bool
         True if there are FS slits to merge, False otherwise
-    
+
     Raises
     ------
-    ValueError 
+    ValueError
         If the length of the _interpolatedflat_fs.fits files does not match the length of the _interpolatedflat.fits files.
-    
+
     """
 
     #  intflat for FS slits for NRS1
@@ -142,7 +143,7 @@ def validate_interpolatedflat_files(intflat_fs_output_files, intflat_output_file
         msgs.info('Found _nrs1_interpolatedflat_fs.fits files. There are FS slits and MOS slits on nrs1')
     elif len(intflat_fs_output_files) == 0:
         merge_fs = False
-    else: 
+    else:
         raise ValueError('The length of the _interpolatedflat_fs.fits files does not match the length of the _interpolatedflat.fits files for {:s}'.format(detector))
     return merge_fs
 
@@ -326,7 +327,7 @@ class DitherOffsets:
           ``offsets_pix_x``, ``offsets_pix_y``, ``on_detector``,
           ``xoff_arcsec``, ``yoff_arcsec``, ``filters``, ``gratings``,
           ``filenames``, ``ndet``, ``nexp``, ``det_names``, ``slit_names``.
-        """        
+        """
         self.cal_data = cal_data
         # Validate slit_source input
         if not isinstance(slits_sources, (list, tuple)) or len(slits_sources) == 0:
@@ -334,13 +335,13 @@ class DitherOffsets:
         self.slit_names, self.source_names = zip(*slits_sources)
         self.ndet, self.nexp = cal_data.shape
         self.det_names = ['NRS1', 'NRS2']
-    
+
 
         # Global per-(det,exp) SI-ideal offsets + per-exposure config
-        # SI is a distortion-removed, instrument-centric frame (units: arcsec) defined in the 
-        # Science Instrument Aperture File (SIAF). Since in the standard dither pattherns, the 
-        # xoff_arcsec is extremely small ~ 1e-6 asec, whereas the yoff_arcsec is significant ~ 1 asec, 
-        # we simply treat the x-axis as the spectral direction and the y-axis as the spatial direction. 
+        # SI is a distortion-removed, instrument-centric frame (units: arcsec) defined in the
+        # Science Instrument Aperture File (SIAF). Since in the standard dither pattherns, the
+        # xoff_arcsec is extremely small ~ 1e-6 asec, whereas the yoff_arcsec is significant ~ 1 asec,
+        # we simply treat the x-axis as the spectral direction and the y-axis as the spatial direction.
         self.xoff_arcsec = np.full((self.ndet, self.nexp), np.nan, float)
         self.yoff_arcsec = np.full((self.ndet, self.nexp), np.nan, float)
         self.filters = []
@@ -384,9 +385,10 @@ class DitherOffsets:
                     x0, y0 = (nx - 1)/2.0, (ny - 1)/2.0
 
                     # evaluate WCS at subimage center and +1 pix in x and y
-                    c0, lam0  = wcs(x0,       y0,       with_units=True)
-                    cx, lamx1 = wcs(x0 + 1.0, y0,       with_units=True)
-                    cy, lamy1 = wcs(x0,       y0 + 1.0, with_units=True)
+                    # Using APE 14 pixel_to_world interface (returns SkyCoord, SpectralCoord)
+                    c0, lam0  = wcs.pixel_to_world(x0,       y0)
+                    cx, lamx1 = wcs.pixel_to_world(x0 + 1.0, y0)
+                    cy, lamy1 = wcs.pixel_to_world(x0,       y0 + 1.0)
 
                     asec_per_pix_x = c0.separation(cx).to(u.arcsec).value
                     asec_per_pix_y = c0.separation(cy).to(u.arcsec).value
@@ -394,22 +396,22 @@ class DitherOffsets:
                     self.offsets_pix_x[slit_name][idet, iexp] = self.xoff_arcsec[idet, iexp] / asec_per_pix_x
                     self.offsets_pix_y[slit_name][idet, iexp] = self.yoff_arcsec[idet, iexp] / asec_per_pix_y
                     self.on_detector[slit_name][idet, iexp]   = True
-                    
-        if verbose: 
+
+        if verbose:
             text = repr(self)
             msgs.info("\n" + text)
 
     def _check_name(self, slit_name=None, source_name=None):
-        """ 
+        """
         Utility method to check that the slit name exists in the list of slit names.
-        
+
         Parameters
         ----------
         slit_name : str, optional
             The slit name. Either slit_name or source_name must be provided.
         source_name : str, optional
             The source name. Either slit_name or source_name must be provided.
-    
+
         Returns
         -------
         idx : int
@@ -424,7 +426,7 @@ class DitherOffsets:
         if slit_name is not None:
             if slit_name not in self.slit_names:
                 msgs.error(f'Slit name {slit_name} not found. Available slits are: {self.slit_names}')
-            else: 
+            else:
                 _slit_name = str(slit_name)
                 idx = self.slit_names.index(_slit_name)
                 _source_name = self.source_names[idx]
@@ -432,28 +434,28 @@ class DitherOffsets:
         if source_name is not None:
             if source_name not in self.source_names:
                 msgs.error(f'Source name {source_name} not found. Available sources are: {self.source_names}')
-            else: 
+            else:
                 _source_name = str(source_name)
                 idx = self.source_names.index(_source_name)
                 _slit_name = self.slit_names[idx]
                 return idx, _slit_name, _source_name
-            
+
 
     def get_pixel_offsets(self, slit_name=None, source_name=None, best=False):
         """
-        Return the (dx_pix, dy_pix) pixel offsets for a given slit. 
+        Return the (dx_pix, dy_pix) pixel offsets for a given slit.
 
         Parameters
         ----------
         slit_name : str
-            The slit name, optional. Either slit_name or source_name must be provided. 
+            The slit name, optional. Either slit_name or source_name must be provided.
         source_name : str
             The source name, optional. Either slit_name or source_name must be provided.
         best : bool, optional
             If True, return only the offsets for the best detector (see `get_best_detector`).
-            If False (default), return offsets for both detectors, with NaNs where the slit is not present on 
+            If False (default), return offsets for both detectors, with NaNs where the slit is not present on
             that detector.
-            
+
         Returns
         -------
         dx_pix : np.ndarray, shape (ndet, nexp) or (nexp,) if best=True
@@ -462,26 +464,26 @@ class DitherOffsets:
             The pixel offsets in the y direction.
         """
         idx, _slit_name, _source_name = self._check_name(slit_name=slit_name, source_name=source_name)
-        if best: 
+        if best:
             idet, det_name = self.get_best_detector(_slit_name)
             if np.isnan(idet):
                 msgs.error(f'Slit {slit_name} has no coverage on either detector for any exposure.')
             return self.offsets_pix_x[_slit_name][idet, :], self.offsets_pix_y[_slit_name][idet, :]
-        else: 
+        else:
             return self.offsets_pix_x[_slit_name].copy(), self.offsets_pix_y[_slit_name].copy()
-        
+
 
     def get_arcsec_offsets(self, idet=None, det_name=None):
         """
         Return the global offsets (arcsec) for both detectors or the best detector.
-        
+
         Parameters
         ----------
         idet : int, optional
             The detector index (0 or 1) to return offsets for. If both idet and det_name are None, return offsets for both detectors. If both idet and det_name are specified, raise an error.
         det_name : str, optional
             The detector name ('NRS1' or 'NRS2') to return offsets for. If both idet and det_name are None, return offsets for both detectors. If both idet and det_name are specified, raise an error.
-        
+
         Returns
         -------
         dx_arcsec : np.ndarray, shape (ndet, nexp) or (nexp,)
@@ -522,14 +524,14 @@ class DitherOffsets:
         Returns
         -------
         idet : int
-            The chosen detector index (0 or 1), or np.nan if the slit is not on either detector. If the slit is not on either detector, idet is np.nan. 
+            The chosen detector index (0 or 1), or np.nan if the slit is not on either detector. If the slit is not on either detector, idet is np.nan.
         det_name : str or None
-            The chosen detector name ('NRS1' or 'NRS2'), or None if the slit is not on either detector. If the slit is not on either detector, det_name is None.    
+            The chosen detector name ('NRS1' or 'NRS2'), or None if the slit is not on either detector. If the slit is not on either detector, det_name is None.
         """
-        
+
         if prefer_det not in (0, 1):
             msgs.error('prefer_det must be 0 (NRS1) or 1 (NRS2).')
-        
+
         idx, _slit_name, _source_name = self._check_name(slit_name=slit_name, source_name=source_name)
 
         det_good = np.all(self.on_detector[_slit_name], axis=1)
@@ -537,15 +539,15 @@ class DitherOffsets:
         if not det_good.any():
             msgs.warn(f'Slit/Source {_slit_name}/{_source_name} has no coverage on either detector for any exposure.')
             return np.nan, None
-        
+
         if det_good.sum() == 1:
             idet = int(np.argmax(det_good))
             return idet, self.det_names[idet]
-        
+
         # both True -> honor prefer_det
         idet = int(prefer_det)
         return idet, self.det_names[idet]
-    
+
     def get_rel_arcsec_offsets(self, ref_exp=0, external_ref_x=None, external_ref_y=None):
         """
         Relative SI-ideal offsets (arcsec) over exposures, using the same detector rule,
@@ -555,18 +557,18 @@ class DitherOffsets:
         ----------
         ref_exp : int, optional
             The reference exposure index. Default is 0, i.e. the first exposure in the series. If external_reference is provided, this is ignored.
-        external_ref_x : float or np.ndarray of shape (2,) 
-            If provided, use this external reference offsets (arcsec) instead of a set of offsets from one of the exposures 
+        external_ref_x : float or np.ndarray of shape (2,)
+            If provided, use this external reference offsets (arcsec) instead of a set of offsets from one of the exposures
             (ref_exp) in this sequence of exposures as the reference. If a float is provided, it is used for both detectors.
-        external_ref_y : float or np.ndarray of shape (2,) 
-            If provided, use this external reference offsets (arcsec) instead of a set of offsets from one of the exposures 
+        external_ref_y : float or np.ndarray of shape (2,)
+            If provided, use this external reference offsets (arcsec) instead of a set of offsets from one of the exposures
             (ref_exp) in this sequence of exposures as the reference. If a float is provided, it is used for both detectors.
-        
+
         Returns
         -------
         rel_arcsec_offsets_x : np.ndarray, shape (2, nexp)
             The relative x arcsec offsets for both detectors (NRS1, NRS2).
-        rel_arcsec_offsets_y : np.ndarray, shape (2, nexp)            
+        rel_arcsec_offsets_y : np.ndarray, shape (2, nexp)
             The relative y arcsec offsets for both detectors (NRS1, NRS2).
         """
         if (external_ref_x is None) and (external_ref_y is None):
@@ -588,7 +590,7 @@ class DitherOffsets:
             ref_val_x = _to_det2(external_ref_x, 'external_ref_x')
             ref_val_y = _to_det2(external_ref_y, 'external_ref_y')
 
-        return ref_val_x[:, np.newaxis] - self.xoff_arcsec, ref_val_y[:, np.newaxis] - self.yoff_arcsec 
+        return ref_val_x[:, np.newaxis] - self.xoff_arcsec, ref_val_y[:, np.newaxis] - self.yoff_arcsec
 
 
     def get_rel_pixel_offsets(self, slit_name=None, source_name=None, ref_exp=0, external_ref_x=None, external_ref_y=None, prefer_det=0, best=True):
@@ -604,32 +606,32 @@ class DitherOffsets:
             The source name. Optional, either slit_name or source_name must be provided.
         ref_exp : int, optional
             The reference exposure index. Default is 0, i.e. the first exposure in the series. If external_reference is provided, this is ignored.
-        external_ref_x : float or np.ndarray of shape (2,) 
-            If provided, use this external reference offsets (arcsec) instead of a set of offsets from one of the exposures 
+        external_ref_x : float or np.ndarray of shape (2,)
+            If provided, use this external reference offsets (arcsec) instead of a set of offsets from one of the exposures
             (ref_exp) in this sequence of exposures as the reference. If a float is provided, it is used for both detectors.
-        external_ref_y : float or np.ndarray of shape (2,) 
-            If provided, use this external reference offsets (arcsec) instead of a set of offsets from one of the exposures 
+        external_ref_y : float or np.ndarray of shape (2,)
+            If provided, use this external reference offsets (arcsec) instead of a set of offsets from one of the exposures
             (ref_exp) in this sequence of exposures as the reference. If a float is provided, it is used for both detectors.
         prefer_det : int, optional
             The preferred detector if both detectors have coverage (0=NRS1, 1=NRS2). Default is 0 (NRS1).
             This is passed to `get_best_detector
         best : bool, optional
-            If True (default), return one set of offsets for both detectors using the best detector (see `get_best_detector`). 
-            If False, return offsets for both detectors, with NaNs where the slit is not present on that detector. 
+            If True (default), return one set of offsets for both detectors using the best detector (see `get_best_detector`).
+            If False, return offsets for both detectors, with NaNs where the slit is not present on that detector.
 
         Returns
         -------
         rel_arcsec_offsets (nexp,) float
         """
         idx, _slit_name, _source_name = self._check_name(slit_name=slit_name, source_name=source_name)
-   
+
         # Check external_reference is provided, if best=True it is a float, and if best=False, it is a 2d array
         if external_ref_x is None and external_ref_y is None:
             if (ref_exp < 0) | (ref_exp >= self.nexp):
                 msgs.error(f'ref_exp must be between 0 and {self.nexp-1}.')
             ref_val_x = self.offsets_pix_x[_slit_name][:, ref_exp]
             ref_val_y = self.offsets_pix_y[_slit_name][:, ref_exp]
-        else: 
+        else:
             if (external_ref_x is None) or (external_ref_y is None):
                 msgs.error('If providing external references, provide both external_ref_x and external_ref_y.')
             def _to_det2(val, label):
@@ -645,18 +647,18 @@ class DitherOffsets:
         rel_pix_offsets_x = ref_val_x[:, np.newaxis] - self.offsets_pix_x[_slit_name]
         rel_pix_offsets_y = ref_val_y[:, np.newaxis] - self.offsets_pix_y[_slit_name]
 
-        if best: 
+        if best:
             idet, det_name = self.get_best_detector(slit_name=_slit_name, prefer_det=prefer_det)
             if np.isnan(idet):
                 msgs.error(f'Slit/Source {_slit_name}/{_source_name} has no coverage on either detector for any exposure.')
             return rel_pix_offsets_x[idet, :], rel_pix_offsets_y[idet, :]
 
         return rel_pix_offsets_x, rel_pix_offsets_y
-        
+
     def get_coadd2d_offsets(self, slit_name=None, source_name=None, ref_exp=0, external_ref=None, prefer_det=0):
         """
         Wrapper for `get_rel_pixel_offsets` to return the offsets in the format required by `core.coadd2d`.
-        
+
         Parameters
         ----------
         slit_name : str
@@ -665,8 +667,8 @@ class DitherOffsets:
             The source name. Optional, either slit_name or source_name must be provided.
         ref_exp : int, optional
             The reference exposure index. Default is 0, i.e. the first exposure in the series. If external_reference is provided, this is ignored.
-        external_ref : float 
-            If provided, use this external reference offset, which is the y_offset (spatial in pixels) instead of an offset from 
+        external_ref : float
+            If provided, use this external reference offset, which is the y_offset (spatial in pixels) instead of an offset from
             one of the exposures (ref_exp) in this sequence of exposures as the reference.
         prefer_det : int, optional
             The preferred detector if both detectors have coverage (0=NRS1, 1=NRS2). Default is 0 (NRS1).
@@ -679,10 +681,10 @@ class DitherOffsets:
         else:
             external_ref_x = None
             external_ref_y = None
-            
-        return self.get_rel_pixel_offsets(slit_name=slit_name, source_name=source_name, ref_exp=ref_exp, external_ref_x=external_ref_x, 
-                                          external_ref_y=external_ref_y, prefer_det=prefer_det, best=True)[1]        
-    
+
+        return self.get_rel_pixel_offsets(slit_name=slit_name, source_name=source_name, ref_exp=ref_exp, external_ref_x=external_ref_x,
+                                          external_ref_y=external_ref_y, prefer_det=prefer_det, best=True)[1]
+
     def __repr__(self):
         # ---------- helpers ----------
         def _fmt_row(arr, width=8, prec=3):
@@ -755,8 +757,8 @@ class DitherOffsets:
 
 # def compute_spatial_positions(cal_data, slit_names):
 #     """
-#     Routine to compute the spatial offsets in pixels for a given slit from the dither pattern offsets. 
-    
+#     Routine to compute the spatial offsets in pixels for a given slit from the dither pattern offsets.
+
 #     Parameters
 #     ----------
 #     cal_data : np.narray of datamodels.SpecModel objects
@@ -768,9 +770,9 @@ class DitherOffsets:
 #     Returns
 #     -------
 #     offsets_dict : dict
-#         Dictionary with the slit names as keys. The values are np.ndarrays of shape (2, nexp,) with the spatial offsets 
+#         Dictionary with the slit names as keys. The values are np.ndarrays of shape (2, nexp,) with the spatial offsets
 #         in pixels for each exposure
-    
+
 #     Simplest possible offsets:
 #       - per-slit WCS (from cal_data[det,exp].slits[index])
 #       - arcsec_per_pix_y via sky separation between (x0,y0) and (x0,y0+1)
@@ -783,27 +785,27 @@ class DitherOffsets:
 #         Detector-Y spatial offsets in pixels for NRS1, relative to NRS1 exp0.
 #     """
 
-#     nslits = len(slit_names)    
+#     nslits = len(slit_names)
 #     ndet, nexp = cal_data.shape
 #     dx_pix = np.full((nslits, ndet, nexp), np.nan, dtype=float)
 #     dy_pix = np.full((nslits, ndet, nexp), np.nan, dtype=float)
 #     on_detector = np.zeros((nslits, ndet, nexp), dtype=bool)
-#     # Setup parameters 
+#     # Setup parameters
 #     filter = cal_model.meta.instrument.filter
 #     grating = cal_model.meta.instrument.grating
 
-#     # These offsets are global, i.e. the are the same for all slits and correspond to the dither patern. 
-#     xoff_arcsec = float(cal_model.meta.dither.x_offset) 
+#     # These offsets are global, i.e. the are the same for all slits and correspond to the dither patern.
+#     xoff_arcsec = float(cal_model.meta.dither.x_offset)
 #     yoff_arcsec = float(cal_model.meta.dither.y_offset)
 
-#     for islit, slit_name in enumerate(slit_names):   
+#     for islit, slit_name in enumerate(slit_names):
 #         for idet in range(ndet):
 #             for iexp in range(nexp):
 #                 cal_model = cal_data[idet, iexp]
 #                 slit_names = np.array([slit.name for slit in cal_model.slits])
 #                 _indx = np.where((slit_names == slit_name))[0]
 #                 on_detector = _indx.size != 0
-#                 if on_detector:                 
+#                 if on_detector:
 #                     slit = cal_model.slits[_indx[0]]
 #                     wcs_obj = slit.meta.wcs  # per-slit 2-input GWCS (x,y)->(ra,dec,lam)
 #                     ny, nx = slit.data.shape
@@ -811,8 +813,8 @@ class DitherOffsets:
 #                     x0, y0 = (nx - 1)/2.0, (ny - 1)/2.0
 #                     # arcsec per pixel along detector-Y at the slit center
 #                     c0,  lam0  = wcs_obj(x0, y0, with_units=True)
-#                     yc1, lamx1 = wcs_obj(x0, y0 + 1.0, with_units=True) 
-#                     xc1, lamy1 = wcs_obj(x0 + 1.0, y0, with_units=True)  
+#                     yc1, lamx1 = wcs_obj(x0, y0 + 1.0, with_units=True)
+#                     xc1, lamy1 = wcs_obj(x0 + 1.0, y0, with_units=True)
 #                     asec_per_pix_y = c0.separation(yc1).to(u.arcsec).value
 #                     asec_per_pix_x = c0.separation(xc1).to(u.arcsec).value
 #                     # convert to detector pixels along Y
@@ -822,14 +824,14 @@ class DitherOffsets:
 #         ref_y = dy_pix[ref_det, ref_exp]
 #         #offsets_nrs1 = ref_y - dy_pix[0, :]   # shape (nexp,)
 #         offsets_nrs1 = ref_y - dy_pix # shape (ndet, nexp)
-#         #print(f"Slit_name = {slit_name}, xoff (arcsec) = {xoff_arcsec}, yoff (arcsec) = {yoff_arcsec}, yoffsets (pixels): {offsets_nrs1[0, :]}")   
+#         #print(f"Slit_name = {slit_name}, xoff (arcsec) = {xoff_arcsec}, yoff (arcsec) = {yoff_arcsec}, yoffsets (pixels): {offsets_nrs1[0, :]}")
 #     return offsets_nrs1[0, :]
 
 
 
-def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None, 
-                   reduce_slits=None, reduce_sources=None, 
-                   show=False, overwrite_stage1=False, overwrite_stage2=False, 
+def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
+                   reduce_slits=None, reduce_sources=None,
+                   show=False, overwrite_stage1=False, overwrite_stage2=False,
                    kludge_err=1.5, snr_thresh=10.0, find_trim_edge=[5,5], bkg_redux=False, run_bogus_f100lp=False):
     """
     Main routine to reduce JWST NIRSpec data
@@ -839,8 +841,8 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     redux_dir : str
         Path to the directory where the data will be reduced.
     source_type = str
-        source_type for the spec2d pipeline. Options are 'POINT' or 'EXTENDED'. Set this parameter to be 'POINT' for fixed slit data reduction, and 
-        'EXTENDED' for MSA reductions. This impacts the flux calibration, I believe via slit loss corrections and what is assumed.  
+        source_type for the spec2d pipeline. Options are 'POINT' or 'EXTENDED'. Set this parameter to be 'POINT' for fixed slit data reduction, and
+        'EXTENDED' for MSA reductions. This impacts the flux calibration, I believe via slit loss corrections and what is assumed.
     uncal_list : list
         List of lists of uncalibrated files for each exposure. exp_list[0] is for nrs1 and exp_list[1] is for nrs2.  Optional, default is None. Either uncal_list or rate_list must be provided.
     rate_list : list
@@ -848,7 +850,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     reduce_slits : str or list, optional
         List of slits to reduce. If None, reduce all. 
     reduce_sources : str or list, optional
-        List of sources to reduce. If None, reduce all. 
+        List of sources to reduce. If None, reduce all.
     show : bool, optional
         Show the images and QA for the reduction in the ginga window. 
     overwrite_stage1 : bool, optional
@@ -858,15 +860,15 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     kludge_err : float, optional
         Factor to scale the sigma error maps up by to account for the incorrect error propagation in the JWST pipeline. 
     snr_thresh : float, optional
-        SNR threshold for the spec2d extraction. Default is 10.0. 
+        SNR threshold for the spec2d extraction. Default is 10.0.
     find_trim_edge : list, optional
-        Trim the slit by this number of pixels left/right before finding objects. 
+        Trim the slit by this number of pixels left/right before finding objects.
     bkg_redux : bool, optional
         If True, perform a background redux using image differencing. If False, model the background with a bspline. bkg_redux should typically be set to True for MSA reductions, 
         and False for FS reductions.
     run_bogus_f100lp : bool
-        If True, run bogus redux for the 140H/F100LP grating to accomodate data taken with the F070LP filter? Default is False. 
-        
+        If True, run bogus redux for the 140H/F100LP grating to accomodate data taken with the F070LP filter? Default is False.
+
     Returns
     -------
     DitherOffsets : DitherOffsets object
@@ -886,10 +888,10 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     # TODO: This needs to be defined by the user
     scipath = os.path.join(pypeit_output_dir, 'Science')
     if not os.path.isdir(scipath):
-        msgs.info('Creating directory for Science output: {0}'.format(scipath))
+        log.info('Creating directory for Science output: {0}'.format(scipath))
         os.makedirs(scipath)
     if not os.path.isdir(output_dir):
-        msgs.info('Creating directory for calwebb output: {0}'.format(output_dir))
+        log.info('Creating directory for calwebb output: {0}'.format(output_dir))
         os.makedirs(output_dir)
     if not os.path.isdir(output_dir_level1):
         msgs.info('Creating directory for calwebb level 1 output: {0}'.format(output_dir_level1))
@@ -897,12 +899,12 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     if not os.path.isdir(output_dir_level2):
         msgs.info('Creating directory for calwebb level 2 output: {0}'.format(output_dir_level2))
         os.makedirs(output_dir_level2)
-    
+
     # Did the user pass in an uncal_list? 
     if uncal_list is None and rate_list is None:
-        msgs.error('Either uncal_list or rate_list must be provided.')
+        raise PypeItError('Either uncal_list or rate_list must be provided.')
     elif uncal_list is not None and rate_list is not None:
-        msgs.error('Only one of uncal_list or rate_list can be provided.')
+        raise PypeItError('Only one of uncal_list or rate_list can be provided.')
     elif uncal_list is not None and rate_list is None: 
         uncalfiles_1 = uncal_list[0]
         uncalfiles_2 = uncal_list[1] if len(uncal_list) > 1 else []
@@ -922,15 +924,15 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
 
 
         #parameter_dict_det1 = {"jump": {"maximum_cores": 'quarter'},}
-        # These clean_flicker_noise parameters for NIRSpec are based on the recommended values here: 
-        # https://jwst-docs.stsci.edu/known-issues-with-jwst-data/1-f-noise#gsc.tab=0 
+        # These clean_flicker_noise parameters for NIRSpec are based on the recommended values here:
+        # https://jwst-docs.stsci.edu/known-issues-with-jwst-data/1-f-noise#gsc.tab=0
         # which were created after JWST moved the 1/f noise correction to the level1 correction stage
-        parameter_dict_det1 = {'clean_flicker_noise': 
+        parameter_dict_det1 = {'clean_flicker_noise':
             {'skip': False, 'fit_method': 'fft', 'n_sigma': 2, 'mask_science_regions': False, 'background_method': None}}
         for uncal in uncalfiles_all:
             ratefile = os.path.join(output_dir_level1,  os.path.basename(uncal).replace('_uncal', '_rate'))
             if os.path.isfile(ratefile) and not overwrite_stage1:
-                msgs.info('Using existing rate file: {0}'.format(ratefile))
+                log.info('Using existing rate file: {0}'.format(ratefile))
                 continue
             Detector1Pipeline.call(uncal, save_results=True, output_dir=output_dir_level1, steps=parameter_dict_det1)
 
@@ -953,23 +955,23 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
 
     # TODO Should we flat field. The flat field and flat field error are wonky and probably nonsense
     param_dict_spec2 = {
-        'assign_wcs': {'save_results': True}, # This output now has the full 2d image 
+        'assign_wcs': {'save_results': True}, # This output now has the full 2d image
         'extract_2d': {'save_results': True},
         'bkg_subtract': {'skip': True},
         'imprint_subtract': {'save_results': True}, # TODO Check up on whether imprint subtraction is being done by us???
         'master_background_mos': {'skip': True},
-        'srctype': {'source_type': source_type},        
+        'srctype': {'source_type': source_type},
         # Default to setting the source type to extended for MSA data and point for FS data. This impacts flux calibration.
         #'srctype': {'source_type': 'POINT'} if 'FS' in mode else {'source_type': 'EXTENDED'},
         # 'flat_field': {'skip': True},
         'resample_spec': {'skip': True},
         'extract_1d': {'skip': True},
-        'flat_field': {'save_interpolated_flat': True}, 
+        'flat_field': {'save_interpolated_flat': True},
          # Forces to always run the barshadow step. Default is to apply  barshadow only for extended sources, which means slit won't be flat
-        'barshadow': {'source_type': 'EXTENDED'},  
-        'nsclean': {'skip': True, 'save_results': False},
+        'barshadow': {'source_type': 'EXTENDED'},
+#        'nsclean': {'skip': True, 'save_results': False},
     }
-    # So the nsclean is now being done via clean_flicker_noise in the Det1 pipeline. 
+    # So the nsclean is now being done via clean_flicker_noise in the Det1 pipeline.
 
     # TODO I'm rather unclear on what to do with the src_type since I'm not following what the JWST ipeline is doing there very
     # well. I think they are trying to model slit losses for point sources but not for extended sources. Changing src_type
@@ -992,7 +994,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
         # cal) gets re-run automatically on the next call.
         cal_file = os.path.join(output_dir_level2, os.path.basename(sci).replace('_rate', '_cal'))
         if os.path.isfile(cal_file) and not overwrite_stage2:
-            msgs.info('Found existing cal file: {0}; not running Spec2'.format(cal_file))
+            log.info('Found existing cal file: {0}; not running Spec2'.format(cal_file))
             continue
         Spec2Pipeline.call(sci, save_results=True, output_dir=output_dir_level2, steps=param_dict_spec2)
 
@@ -1011,7 +1013,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     par['rdx']['qadir'] = 'QA'
     png_dir = os.path.join(qa_dir, 'PNGs')
     if not os.path.isdir(qa_dir):
-        msgs.info('Creating directory for QA output: {0}'.format(qa_dir))
+        log.info('Creating directory for QA output: {0}'.format(qa_dir))
         os.makedirs(qa_dir)
     if not os.path.isdir(png_dir):
         os.makedirs(png_dir)
@@ -1055,7 +1057,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
             intflat_fs_output_files_1.append(file_1.replace('_interpolatedflat.fits', '_interpolatedflat_fs.fits'))
         if os.path.isfile(file_2.replace('_interpolatedflat.fits', '_interpolatedflat_fs.fits')):
             intflat_fs_output_files_2.append(file_2.replace('_interpolatedflat.fits', '_interpolatedflat_fs.fits'))
-    # Validate 
+    # Validate
     merge_fs_nrs1 = validate_interpolatedflat_files(intflat_fs_output_files_1, intflat_output_files_1, 'nrs1')
     merge_fs_nrs2 = validate_interpolatedflat_files(intflat_fs_output_files_2, intflat_output_files_2, 'nrs2')
 
@@ -1095,7 +1097,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     ## NOTE: Sign convention requires this calculation of the offset
     #dither_offsets_pixels_old = dither_offsets_pixels_old[:,0,None] - dither_offsets_pixels_old
     #print(dither_offsets_pixels_old[0,:])
-        
+
 
     print('Reading in calwebb outputs. This may take a while...')
     # TODO Figure out why this is so damn slow! I suspect it is calwebb1
@@ -1104,8 +1106,8 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
         msa_data[0, iexp] = datamodels.open(msa_output_files_1[iexp])
         cal_data[0, iexp] = datamodels.open(cal_output_files_1[iexp])
         flat_data_1 = datamodels.open(intflat_output_files_1[iexp])
-        # Merge the FS slits into the MOS slits for NRS1      
-        if merge_fs_nrs1: 
+        # Merge the FS slits into the MOS slits for NRS1
+        if merge_fs_nrs1:
             msgs.info('Appending interpolatedflat FS slits into MOS output for {:s}'.format(basenames_1[iexp]))
             flat_data_fs_1 = datamodels.open(intflat_fs_output_files_1[iexp])
             for slit in flat_data_fs_1.slits:
@@ -1141,7 +1143,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
 
     iexp_ref = 0
     if not os.path.isdir(scipath):
-        msgs.info('Creating directory for Science output: {0}'.format(scipath))
+        log.info('Creating directory for Science output: {0}'.format(scipath))
 
 
     if _reduce_slits is not None:

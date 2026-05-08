@@ -56,7 +56,7 @@ else:
     )
 
 if len(filtered_sci) > 0:
-    MastClass.download_products(filtered_sci, download_dir=download_dir, verbose=True, mrp_only=False)
+    MastClass.download_products(filtered_sci, download_dir=download_dir, verbose=True)
 else:
     print(f"[SCI] No products matched for program {program}.")
 
@@ -85,6 +85,6 @@ if do_ta:
         )
 
         if len(keep_wata) > 0:
-            MastClass.download_products(keep_wata, download_dir=download_dir, verbose=True, mrp_only=False)
+            MastClass.download_products(keep_wata, download_dir=download_dir, verbose=True)
         else:
             print(f"[TA] TA rows exist, but no matching WATA products with desired suffixes in program {program}.")

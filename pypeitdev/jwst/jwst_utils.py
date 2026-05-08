@@ -17,7 +17,8 @@ from matplotlib import pyplot as plt
 from jwst import datamodels
 from pypeit.utils import inverse, zero_not_finite, fast_running_median
 DO_NOT_USE = datamodels.dqflags.pixel['DO_NOT_USE']
-from pypeit import msgs
+from pypeit import log
+from pypeit import PypeItError
 from pypeit import datamodel
 from pypeit.core import flat
 from pypeit.core import procimg
@@ -363,19 +364,27 @@ def fnu_to_flam(wave, f_nu, sigma_nu, surface_brightness=False):
         Error array in F_lambda units. We will convert to erg/s/cm^2/Angstrom. 
     
     """
+
+    
     nu_to_flam_factor =const.c/np.square(wave)
     factor = nu_to_flam_factor
     if surface_brightness:
+        angle_unit = u.steradian        
+        _f_nu = f_nu/angle_unit
+        _sigma_nu = sigma_nu/angle_unit
         # I think this is the area of a NIRSpec pixel in steradians
         pixel_area = 4.795157053786361e-13*u.steradian
         factor = pixel_area*nu_to_flam_factor
+    else: 
+        _f_nu = f_nu
+        _sigma_nu = sigma_nu
     
-    f_lam = (f_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)    
-    sigma_lam = (sigma_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)
+    f_lam = (_f_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)    
+    sigma_lam = (_sigma_nu*factor).decompose().to(u.erg/u.s/u.cm**2/u.angstrom)
     
     return f_lam, sigma_lam  
 
-def _jwst_fnu_to_flam(fnufile):
+def _jwst_fnu_to_flam(fnufile, surface_brightness=False):
     """
     Reader a PypeIt Coadd1d or spec1d JWST spectrum in F_nu and convert to F_lambda.
     
@@ -387,6 +396,8 @@ def _jwst_fnu_to_flam(fnufile):
     outfile : str
         Name of the output file with the F_lambda spectrum. If None, the output file is written to the same directory with the same name as 
         fnufile, but with the _Flam.fits suffix.
+    surface_brightness : bool
+        If True, the spectrum is in surface brightness units. If False, the spectrum is in flux density units.
     plot : bool
         If True, a plot of the F_lambda spectrum is displayed.
     
@@ -398,25 +409,26 @@ def _jwst_fnu_to_flam(fnufile):
 
     hdr = fits.getheader(fnufile, 1)
     # Check whther this is a coadd1d file or a spec1d file
-    if 'DMODCLS' not in hdr: 
-            file_type ='coadd1d'        
-            spec_object = Table.read(fnufile, format='fits')
-            flux_MJy = spec_object['flux']*u.MJy
-            wave = spec_object['wave_grid_mid']*u.angstrom
-            sigma_MJy = np.sqrt(inverse(spec_object['ivar']))*u.MJy
-            gpm = spec_object['mask'].astype(bool)
-            surface_brightness=False
+    try: 
+        file_type = hdr['DMODCLS']
+    except KeyError:
+        file_type = 'Spec1D'
+
+    
+    if file_type == 'OneSpec': 
+        spec_object = Table.read(fnufile, format='fits')
+        flux_MJy = spec_object['flux']*u.MJy
+        wave = spec_object['wave_grid_mid']*u.angstrom
+        sigma_MJy = np.sqrt(inverse(spec_object['ivar']))*u.MJy
+        gpm = spec_object['mask'].astype(bool)
     else: 
-            # TESTING
-            angle_unit = u.steradian
-            file_type ='spec1d'
-            spec_object = specobjs.SpecObjs.from_fitsfile(fnufile, chk_version=False)
-            flux_MJy = spec_object[0].OPT_COUNTS*u.MJy/angle_unit
-            wave = spec_object[0].OPT_WAVE*u.angstrom
-            sigma_MJy = spec_object[0].OPT_COUNTS_SIG*u.MJy/angle_unit
-            gpm = spec_object[0].OPT_MASK.astype(bool)
-            surface_brightness=True
-            
+        file_type ='spec1d'
+        spec_object = specobjs.SpecObjs.from_fitsfile(fnufile, chk_version=False)
+        flux_MJy = spec_object[0].OPT_COUNTS*u.MJy
+        wave = spec_object[0].OPT_WAVE*u.angstrom
+        sigma_MJy = spec_object[0].OPT_COUNTS_SIG*u.MJy
+        gpm = spec_object[0].OPT_MASK.astype(bool)
+
 
     _f_lam, _sigma_lam = fnu_to_flam(wave, flux_MJy, sigma_MJy, surface_brightness=surface_brightness)    
     return spec_object, wave, _f_lam, _sigma_lam, gpm
@@ -947,7 +959,7 @@ def jwst_mosaic(image_model_tuple, Calibrations_tuple, kludge_err=1.0,
 
         det_or_mosaic = Mosaic(1, np.array(det_list), shape, np.array(0.0), np.array(0.0), np.array(0.0), 0)
     else:
-        msgs.error('Invalid number of detectors. There is a problem with this slit')
+        raise PypeItError('Invalid number of detectors. There is a problem with this slit')
 
 
     # Instantiate
@@ -1161,11 +1173,11 @@ def jwst_extract_subimgs(final_slit, intflat_slit, f070_f100_rescale=False):
     pathloss = np.array(final_slit.pathloss_uniform.T, dtype=float) if final_slit.source_type == 'EXTENDED' else \
         np.array(final_slit.pathloss_point.T, dtype=float)
     if pathloss.shape == (0,0):
-        msgs.warn('No pathloss for slit {0}'.format(slit_name) + ', setting to 1.0')
+        log.warning('No pathloss for slit {0}'.format(slit_name) + ', setting to 1.0')
         pathloss = np.ones_like(flatfield)
 
     if f070_f100_rescale:
-        msgs.info('Rescaling data taken with F070LP with bogus file headers set to F100LP by transmission ratio F070LP/F100LP')
+        log.info('Rescaling data taken with F070LP with bogus file headers set to F100LP by transmission ratio F070LP/F100LP')
         # I'm multiplying this correction into the pathloss at present. Since both pathloss and flatfield act as a sort
         # of flux calibration I could also multiply into the flat. But since the pathloss is already near unity, it seems
         # more transparent to multiply this factor here, since this correction is also order unity.
@@ -1183,7 +1195,7 @@ def jwst_extract_subimgs(final_slit, intflat_slit, f070_f100_rescale=False):
 
     barshadow = np.array(final_slit.barshadow.T, dtype=float)
     if barshadow.shape == (0,0):
-        msgs.warn('No barshadow for slit {0}'.format(slit_name) + ', setting to 1.0')
+        log.warning('No barshadow for slit {0}'.format(slit_name) + ', setting to 1.0')
         barshadow = np.ones_like(flatfield)
 
     photom_conversion = final_slit.meta.photometry.conversion_megajanskys
@@ -1382,9 +1394,9 @@ def jwst_populate_calibs(nspec, nspat, e2d_multi, final_multi, intflat_multi):
         finitemask_sub = np.isfinite(waveimg_sub)
         if not np.any(finitemask_sub):
             reduce_gpm[islit] = False
-            msgs.warn('All nan wavelengths for Slit={:s}. Not extracting calibrations'.format(slit_name))
+            log.warning('All nan wavelengths for Slit={:s}. Not extracting calibrations'.format(slit_name))
         else:
-            #msgs.info('Extracting calibrations for Slit={:s}'.format(slit_name))
+            #log.info('Extracting calibrations for Slit={:s}'.format(slit_name))
 
             ########################
             # The image segment being used for each slit
@@ -1457,7 +1469,7 @@ def jwst_proc_old(e2d_slit, final_slit, intflat_slit=None, kludge_err=1.0):
     pathloss = np.array(final_slit.pathloss_uniform.T, dtype=float) if final_slit.source_type == 'EXTENDED' else \
         np.array(final_slit.pathloss_point.T, dtype=float)
     if pathloss.shape == (0,0):
-        msgs.warn('No pathloss for slit {0}'.format(slit_name) + ', setting to 1.0')
+        log.warning('No pathloss for slit {0}'.format(slit_name) + ', setting to 1.0')
         pathloss = np.ones_like(raw_data_counts)
     flatfield = np.array(intflat_slit.data.T, dtype=float) if intflat_slit is not None else np.ones_like(raw_data_counts)
     barshadow = np.array(final_slit.barshadow.T, dtype=float)
@@ -1571,12 +1583,12 @@ def jwst_extract_subimgs_old(e2d_slit, final_slit, intflat_slit):
     pathloss = np.array(final_slit.pathloss_uniform.T, dtype=float) if final_slit.source_type == 'EXTENDED' else \
         np.array(final_slit.pathloss_point.T, dtype=float)
     if pathloss.shape == (0,0):
-        msgs.warn('No pathloss for slit {0}'.format(slit_name) + ', setting to 1.0')
+        log.warning('No pathloss for slit {0}'.format(slit_name) + ', setting to 1.0')
         pathloss = np.ones_like(flatfield)
 
     barshadow = np.array(final_slit.barshadow.T, dtype=float)
     if barshadow.shape == (0,0):
-        msgs.warn('No barshadow for slit {0}'.format(slit_name) + ', setting to 1.0')
+        log.warning('No barshadow for slit {0}'.format(slit_name) + ', setting to 1.0')
         barshadow = np.ones_like(flatfield)
 
     photom_conversion = final_slit.meta.photometry.conversion_megajanskys
@@ -1873,7 +1885,7 @@ def jwst_mosaic_fbd(image_model_tuple, Calibrations_tuple, kludge_err=1.0,
 
         det_or_mosaic = Mosaic(1, np.array(det_list), shape, np.array(0.0), np.array(0.0), np.array(0.0), 0)
     else:
-        msgs.error('Invalid number of detectors. There is a problem with this slit')
+        raise PypeItError('Invalid number of detectors. There is a problem with this slit')
 
 
     # Instantiate
