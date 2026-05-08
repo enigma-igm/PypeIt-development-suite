@@ -346,7 +346,109 @@ def jwst_targets(progid, disperser, target, slit=None):
                 #exp_list.append([uncalfile2, uncalfile4, uncalfile6])
                 exp_list.append([uncalfile1, uncalfile2, uncalfile3])
 
-        
+        # SPURS - Abell2744-QSO1 (image B, Furtak et al. 2024); Cycle 4, PID 9214.
+        # Three medium gratings: G140M/F100LP, G235M/F170LP, G395M/F290LP.
+        # Data staged by mgii_forest_jwst.utils.stage_msa_for_target into
+        #   /Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/GO9214/Abell2744-QSO1/<disperser>/
+        # MSA source table source_id = 41, source_name = 9214_41.
+        if '9214' in progid:
+            if target == 'Abell2744-QSO1':
+                base_raw = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/GO9214/Abell2744-QSO1'
+                base_redux = '/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/9214'
+
+                # (obs_visit, activity) pairs that actually cover image B per the
+                # stage_9214_qso1.py matcher. In program 9214, obs=009 carries
+                # image B; within obs=009 the activities below hold each grating.
+                # Each entry in visit_blocks is one 3-dither activity block.
+                # mgii_forest_jwst.redux.redux_utils.calwebb_pypeit chunks the
+                # exposure list by 3 and runs jwst_run_redux per chunk, so the
+                # hardcoded bkg_indices=[(1,2),(0,2),(0,1)] nod pattern still
+                # applies to each block.
+                if disperser == 'G140M':
+                    subdir = 'G140M'
+                    visit_blocks = [
+                        ('09214009001', '03101'),
+                        ('09214009001', '03103'),
+                        ('09214009001', '03105'),
+                        ('09214009002', '03101'),
+                    ]
+                elif disperser == 'G235M':
+                    subdir = 'G235M'
+                    visit_blocks = [
+                        ('09214009002', '03103'),
+                    ]
+                elif disperser == 'G395M':
+                    subdir = 'G395M'
+                    visit_blocks = [
+                        ('09214009002', '03105'),
+                    ]
+                else:
+                    raise ValueError(f"Disperser '{disperser}' not supported for Abell2744-QSO1 in GO9214")
+
+                rawpath_level2 = os.path.join(base_raw, subdir)
+                redux_dir = os.path.join(base_redux, subdir, target)
+                exp_nums = ['00001', '00002', '00003']
+
+                uncalfiles = []
+                for obs_visit, act_id in visit_blocks:
+                    for en in exp_nums:
+                        uncalfiles.append(os.path.join(
+                            rawpath_level2,
+                            f'jw{obs_visit}_{act_id}_{en}_{detname}_uncal.fits'))
+                exp_list.append(uncalfiles)
+
+            # Program-level "all sources" reductions (one shared redux dir per
+            # pointing × grating; rate files come from the GO9214 pool dirs
+            # that stage_9214_qso1.flatten_into_pool() already populates).
+            #
+            # `_pypdef` suffix: same input cal files / visit blocks, but
+            # outputs land in 9214_pypdef/... so a stock-PypeIt-defaults
+            # extraction can run side-by-side with the standard 9214/... tree.
+            _go9214_pointings = ('GO9214_obs008', 'GO9214_obs009',
+                                  'GO9214_obs008_pypdef', 'GO9214_obs009_pypdef')
+            if target in _go9214_pointings:
+                obs = '008' if 'obs008' in target else '009'
+                is_pypdef = target.endswith('_pypdef')
+                base_raw = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/GO9214/pool'
+                base_redux = ('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/9214_pypdef'
+                               if is_pypdef
+                               else '/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/9214')
+
+                # Each entry is (jw_obs_visit_prefix, 5-digit activity id).
+                # G140M is identical between obs 008 / 009 (both use 03101/3/5
+                # in vis001 and 03101 in vis002), but G235M and G395M activity
+                # IDs differ between the two pointings (vis002 only).
+                if disperser == 'G140M':
+                    subdir = 'G140M'
+                    visit_blocks = [
+                        (f'09214{obs}001', '03101'),
+                        (f'09214{obs}001', '03103'),
+                        (f'09214{obs}001', '03105'),
+                        (f'09214{obs}002', '03101'),
+                    ]
+                elif disperser == 'G235M':
+                    subdir = 'G235M'
+                    g235m_act = '05101' if obs == '008' else '03103'
+                    visit_blocks = [(f'09214{obs}002', g235m_act)]
+                elif disperser == 'G395M':
+                    subdir = 'G395M'
+                    g395m_act = '07101' if obs == '008' else '03105'
+                    visit_blocks = [(f'09214{obs}002', g395m_act)]
+                else:
+                    raise ValueError(f"Disperser '{disperser}' not supported for {target}")
+
+                rawpath_level2 = os.path.join(base_raw, subdir)
+                redux_dir = os.path.join(base_redux, subdir, f'all_obs{obs}')
+                exp_nums = ['00001', '00002', '00003']
+
+                uncalfiles = []
+                for obs_visit, act_id in visit_blocks:
+                    for en in exp_nums:
+                        uncalfiles.append(os.path.join(
+                            rawpath_level2,
+                            f'jw{obs_visit}_{act_id}_{en}_{detname}_uncal.fits'))
+                exp_list.append(uncalfiles)
+
         if '2073' in progid:
             if 'PRISM' == disperser:
                 ## Prorgram for Slit Loss Characterization for MSA shutters

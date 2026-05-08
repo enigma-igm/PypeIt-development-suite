@@ -987,9 +987,12 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     # Run the spec2 pipeline
 
     for sci in rate_files_all:
-        assign_wcs_file = os.path.join(output_dir_level2, os.path.basename(sci).replace('_rate', '_assign_wcs'))
-        if os.path.isfile(assign_wcs_file) and not overwrite_stage2:
-            msgs.info('Found existing assign_wcs file: {0}; not running Spec2'.format(assign_wcs_file))
+        # Check for the FINAL cal file rather than the early assign_wcs file so
+        # that an interrupted stage2 run (which can leave assign_wcs without a
+        # cal) gets re-run automatically on the next call.
+        cal_file = os.path.join(output_dir_level2, os.path.basename(sci).replace('_rate', '_cal'))
+        if os.path.isfile(cal_file) and not overwrite_stage2:
+            msgs.info('Found existing cal file: {0}; not running Spec2'.format(cal_file))
             continue
         Spec2Pipeline.call(sci, save_results=True, output_dir=output_dir_level2, steps=param_dict_spec2)
 

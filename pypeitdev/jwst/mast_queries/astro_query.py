@@ -3,7 +3,7 @@ from astroquery.mast import MastMissionsClass
 
 
 # --- setup (use your real token locally, not in shared code) ---
-token = "f6707ad3e4f14ad0a60f00c05c6b4aa7"
+token = "e5d75cc5337e4dbaa0f6784fdf4480bc" # Jiamu's token on Jan12, 2026
 MastClass = MastMissionsClass(mission='JWST')
 MastClass.login(token=token)
 
@@ -47,11 +47,12 @@ if exptype_sci == 'NRS_FIXEDSLIT':
     )
 else:
     # restrict products to one pointing
-    target_obs = 'jw05664002001_02101' # For GS-13971 which is the only one available now
+    # target_obs = 'jw05664002001_02103' # For GS-13971 which is the only one available now, also jw05664002001_02101
+    target_obs = 'jw05664006001_04101' # Try GN-15498
     mask = [target_obs in fn for fn in products_sci['filename']]
     products_sci_subset = products_sci[mask]
     filtered_sci = MastClass.filter_products(
-        products_sci_subset, file_suffix=['_rate', '_msa'], extension='fits'
+        products_sci_subset, file_suffix=['_cal'], extension='fits'
     )
 
 if len(filtered_sci) > 0:
