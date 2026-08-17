@@ -1,5 +1,6 @@
-import os 
+import os
 import copy
+import shutil
 import numpy as np
 from scipy import interpolate
 from astropy.io import fits
@@ -32,7 +33,6 @@ from pypeit import specobjs
 
 
 #import grismconf
-
 
 
 from IPython import embed
@@ -508,9 +508,10 @@ def _jwst_bogus_f100lp(file, outpath=None):
     dirname, basename = os.path.split(file)
     outpath = dirname if outpath is None else outpath
     newfile = os.path.join(outpath, os.path.basename(file).replace('jw', 'bogus_F100LP_jw'))
-    #print('cp -f ' + file + ' ' + newfile)        
-    os.system('cp -f ' + file + ' ' + newfile)
-    fits.setval(newfile, 'FILTER', value='F100LP')        
+    # Use shutil rather than a shell `cp` so paths containing spaces (e.g. an
+    # external disk mounted at "/Volumes/Extreme SSD/...") are handled correctly.
+    shutil.copyfile(file, newfile)
+    fits.setval(newfile, 'FILTER', value='F100LP')
 
     return newfile
 
