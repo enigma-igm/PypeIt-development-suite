@@ -3,7 +3,7 @@ from astroquery.mast import MastMissionsClass
 
 
 # --- setup (use your real token locally, not in shared code) ---
-token = "83ed18e553c44043927b672755432576"
+token = "8f6e6d66d1af4c489ef53e10c62e309b"
 MastClass = MastMissionsClass(mission='JWST')
 MastClass.login(token=token)
 
