@@ -1171,11 +1171,14 @@ def jwst_extract_subimgs(final_slit, intflat_slit, f070_f100_rescale=False):
 
 
     flatfield = np.array(intflat_slit.data.T, dtype=float) #if intflat_slit is not None else np.ones_like(pathloss)
-    pathloss = np.array(final_slit.pathloss_uniform.T, dtype=float) if final_slit.source_type == 'EXTENDED' else \
-        np.array(final_slit.pathloss_point.T, dtype=float)
-    if pathloss.shape == (0,0):
+    pathloss_data = final_slit.pathloss_uniform if final_slit.source_type == 'EXTENDED' else \
+        final_slit.pathloss_point
+    # Newer stdatamodels returns None for absent arrays instead of an empty array.
+    if pathloss_data is None or pathloss_data.size == 0:
         log.warning('No pathloss for slit {0}'.format(slit_name) + ', setting to 1.0')
         pathloss = np.ones_like(flatfield)
+    else:
+        pathloss = np.array(pathloss_data.T, dtype=float)
 
     if f070_f100_rescale:
         log.info('Rescaling data taken with F070LP with bogus file headers set to F100LP by transmission ratio F070LP/F100LP')
@@ -1194,10 +1197,12 @@ def jwst_extract_subimgs(final_slit, intflat_slit, f070_f100_rescale=False):
 
 
 
-    barshadow = np.array(final_slit.barshadow.T, dtype=float)
-    if barshadow.shape == (0,0):
+    barshadow_data = final_slit.barshadow
+    if barshadow_data is None or barshadow_data.size == 0:
         log.warning('No barshadow for slit {0}'.format(slit_name) + ', setting to 1.0')
         barshadow = np.ones_like(flatfield)
+    else:
+        barshadow = np.array(barshadow_data.T, dtype=float)
 
     photom_conversion = final_slit.meta.photometry.conversion_megajanskys
     final = np.array(final_slit.data.T, dtype=float)

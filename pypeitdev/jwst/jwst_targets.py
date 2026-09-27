@@ -762,6 +762,10 @@ def jwst_targets(progid, disperser, target, slit=None):
                 for ii in range(1,6):
                     file_list.append(os.path.join(rawpath_level2, 'jw03417005001_06101_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
                 exp_list.append(file_list)
+            if 'J2232+0012' in target:
+                for ii in range(1,6):
+                    file_list.append(os.path.join(rawpath_level2, 'jw03417007001_06101_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
+                exp_list.append(file_list)
             if 'J1416+0015' in target:
                 for ii in range(1,6):
                     file_list.append(os.path.join(rawpath_level2, 'jw03417009001_04102_000' + "{:02d}".format(ii) + '_' + detname + '_uncal.fits'))
