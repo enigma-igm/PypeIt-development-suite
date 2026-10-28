@@ -140,7 +140,7 @@ def validate_interpolatedflat_files(intflat_fs_output_files, intflat_output_file
     #  intflat for FS slits for NRS1
     if (len(intflat_fs_output_files) > 0) & (len(intflat_fs_output_files) == len(intflat_output_files)):
         merge_fs = True
-        msgs.info('Found _nrs1_interpolatedflat_fs.fits files. There are FS slits and MOS slits on nrs1')
+        log.info('Found _nrs1_interpolatedflat_fs.fits files. There are FS slits and MOS slits on nrs1')
     elif len(intflat_fs_output_files) == 0:
         merge_fs = False
     else:
@@ -331,7 +331,7 @@ class DitherOffsets:
         self.cal_data = cal_data
         # Validate slit_source input
         if not isinstance(slits_sources, (list, tuple)) or len(slits_sources) == 0:
-            msgs.error('slits_sources must be a non-empty list of (slit_name, source_name) tuples.')
+            raise PypeItError('slits_sources must be a non-empty list of (slit_name, source_name) tuples.')
         self.slit_names, self.source_names = zip(*slits_sources)
         self.ndet, self.nexp = cal_data.shape
         self.det_names = ['NRS1', 'NRS2']
@@ -370,7 +370,7 @@ class DitherOffsets:
                     try:
                         islit = next(i for i, nm in enumerate(names_here) if str(nm).strip() == slit_name.strip())
                     except StopIteration:
-                        msgs.warn(f"Slit: {slit_name} not on detector NRS{idet+1}, exp={iexp}.")
+                        log.warning(f"Slit: {slit_name} not on detector NRS{idet+1}, exp={iexp}.")
                         continue  # slit not present on this (det,exp)
 
                     slit = model.slits[islit]
@@ -379,7 +379,7 @@ class DitherOffsets:
                     if getattr(slit, "data", None) is not None and slit.data is not None:
                         ny, nx = slit.data.shape
                     else:
-                        msgs.warn(f"Slit {slit_name} on det=NRS{idet+1}, exp={iexp} has no data array; assuming 2048^2.")
+                        log.warning(f"Slit {slit_name} on det=NRS{idet+1}, exp={iexp} has no data array; assuming 2048^2.")
                         ny = getattr(model.meta.subarray, "ysize", 2048)
                         nx = getattr(model.meta.subarray, "xsize", 2048)
                     x0, y0 = (nx - 1)/2.0, (ny - 1)/2.0
@@ -399,7 +399,7 @@ class DitherOffsets:
 
         if verbose:
             text = repr(self)
-            msgs.info("\n" + text)
+            log.info("\n" + text)
 
     def _check_name(self, slit_name=None, source_name=None):
         """
@@ -422,10 +422,10 @@ class DitherOffsets:
             The source name.
         """
         if (slit_name is None) and (source_name is None):
-            msgs.error('Either slit or source name must be provided.')
+            raise PypeItError('Either slit or source name must be provided.')
         if slit_name is not None:
             if slit_name not in self.slit_names:
-                msgs.error(f'Slit name {slit_name} not found. Available slits are: {self.slit_names}')
+                raise PypeItError(f'Slit name {slit_name} not found. Available slits are: {self.slit_names}')
             else:
                 _slit_name = str(slit_name)
                 idx = self.slit_names.index(_slit_name)
@@ -433,7 +433,7 @@ class DitherOffsets:
                 return idx, _slit_name, _source_name
         if source_name is not None:
             if source_name not in self.source_names:
-                msgs.error(f'Source name {source_name} not found. Available sources are: {self.source_names}')
+                raise PypeItError(f'Source name {source_name} not found. Available sources are: {self.source_names}')
             else:
                 _source_name = str(source_name)
                 idx = self.source_names.index(_source_name)
@@ -467,7 +467,7 @@ class DitherOffsets:
         if best:
             idet, det_name = self.get_best_detector(_slit_name)
             if np.isnan(idet):
-                msgs.error(f'Slit {slit_name} has no coverage on either detector for any exposure.')
+                raise PypeItError(f'Slit {slit_name} has no coverage on either detector for any exposure.')
             return self.offsets_pix_x[_slit_name][idet, :], self.offsets_pix_y[_slit_name][idet, :]
         else:
             return self.offsets_pix_x[_slit_name].copy(), self.offsets_pix_y[_slit_name].copy()
@@ -492,7 +492,7 @@ class DitherOffsets:
             The offsets in the y (spatial)  direction (arcsec).
         """
         if (idet is not None) and (det_name is not None):
-            msgs.error('Specify only one of idet or det_name.')
+            raise PypeItError('Specify only one of idet or det_name.')
         if idet is not None:
             return self.xoff_arcsec[idet, :].copy(), self.yoff_arcsec[idet, :].copy()
         if det_name is not None:
@@ -502,7 +502,7 @@ class DitherOffsets:
             elif det_name_u == 'NRS2':
                 idet = 1
             else:
-                msgs.error('det_name must be NRS1 or NRS2.')
+                raise PypeItError('det_name must be NRS1 or NRS2.')
             return self.xoff_arcsec[idet, :].copy(), self.yoff_arcsec[idet, :].copy()
         return self.xoff_arcsec.copy(), self.yoff_arcsec.copy()
 
@@ -530,14 +530,14 @@ class DitherOffsets:
         """
 
         if prefer_det not in (0, 1):
-            msgs.error('prefer_det must be 0 (NRS1) or 1 (NRS2).')
+            raise PypeItError('prefer_det must be 0 (NRS1) or 1 (NRS2).')
 
         idx, _slit_name, _source_name = self._check_name(slit_name=slit_name, source_name=source_name)
 
         det_good = np.all(self.on_detector[_slit_name], axis=1)
         # If only one detector has any coverage, use that one, otherwise just use NRS1
         if not det_good.any():
-            msgs.warn(f'Slit/Source {_slit_name}/{_source_name} has no coverage on either detector for any exposure.')
+            log.warning(f'Slit/Source {_slit_name}/{_source_name} has no coverage on either detector for any exposure.')
             return np.nan, None
 
         if det_good.sum() == 1:
@@ -573,19 +573,19 @@ class DitherOffsets:
         """
         if (external_ref_x is None) and (external_ref_y is None):
             if (ref_exp < 0) or (ref_exp >= self.nexp):
-                msgs.error(f'ref_exp must be between 0 and {self.nexp-1}.')
+                raise PypeItError(f'ref_exp must be between 0 and {self.nexp-1}.')
             ref_val_x = self.xoff_arcsec[:, ref_exp]
             ref_val_y = self.yoff_arcsec[:, ref_exp]
         else:
             if (external_ref_x is None) or (external_ref_y is None):
-                msgs.error('If providing external references, provide both external_ref_x and external_ref_y.')
+                raise PypeItError('If providing external references, provide both external_ref_x and external_ref_y.')
             # normalize to (2,) arrays
             def _to_det2(val, label):
                 if isinstance(val, (float, int)):
                     return np.full(2, float(val), float)
                 val = np.asarray(val, dtype=float)
                 if val.shape != (2,):
-                    msgs.error(f'{label} must be a scalar or shape (2,) array.')
+                    raise PypeItError(f'{label} must be a scalar or shape (2,) array.')
                 return val
             ref_val_x = _to_det2(external_ref_x, 'external_ref_x')
             ref_val_y = _to_det2(external_ref_y, 'external_ref_y')
@@ -628,18 +628,18 @@ class DitherOffsets:
         # Check external_reference is provided, if best=True it is a float, and if best=False, it is a 2d array
         if external_ref_x is None and external_ref_y is None:
             if (ref_exp < 0) | (ref_exp >= self.nexp):
-                msgs.error(f'ref_exp must be between 0 and {self.nexp-1}.')
+                raise PypeItError(f'ref_exp must be between 0 and {self.nexp-1}.')
             ref_val_x = self.offsets_pix_x[_slit_name][:, ref_exp]
             ref_val_y = self.offsets_pix_y[_slit_name][:, ref_exp]
         else:
             if (external_ref_x is None) or (external_ref_y is None):
-                msgs.error('If providing external references, provide both external_ref_x and external_ref_y.')
+                raise PypeItError('If providing external references, provide both external_ref_x and external_ref_y.')
             def _to_det2(val, label):
                 if isinstance(val, (float, int)):
                     return np.full(2, float(val), float)
                 val = np.asarray(val, dtype=float)
                 if val.shape != (2,):
-                    msgs.error(f'{label} must be a scalar or shape (2,) array.')
+                    raise PypeItError(f'{label} must be a scalar or shape (2,) array.')
                 return val
             ref_val_x = _to_det2(external_ref_x, 'external_ref_x')
             ref_val_y = _to_det2(external_ref_y, 'external_ref_y')
@@ -650,7 +650,7 @@ class DitherOffsets:
         if best:
             idet, det_name = self.get_best_detector(slit_name=_slit_name, prefer_det=prefer_det)
             if np.isnan(idet):
-                msgs.error(f'Slit/Source {_slit_name}/{_source_name} has no coverage on either detector for any exposure.')
+                raise PypeItError(f'Slit/Source {_slit_name}/{_source_name} has no coverage on either detector for any exposure.')
             return rel_pix_offsets_x[idet, :], rel_pix_offsets_y[idet, :]
 
         return rel_pix_offsets_x, rel_pix_offsets_y
@@ -894,10 +894,10 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
         log.info('Creating directory for calwebb output: {0}'.format(output_dir))
         os.makedirs(output_dir)
     if not os.path.isdir(output_dir_level1):
-        msgs.info('Creating directory for calwebb level 1 output: {0}'.format(output_dir_level1))
+        log.info('Creating directory for calwebb level 1 output: {0}'.format(output_dir_level1))
         os.makedirs(output_dir_level1)
     if not os.path.isdir(output_dir_level2):
-        msgs.info('Creating directory for calwebb level 2 output: {0}'.format(output_dir_level2))
+        log.info('Creating directory for calwebb level 2 output: {0}'.format(output_dir_level2))
         os.makedirs(output_dir_level2)
 
     # Did the user pass in an uncal_list? 
@@ -1108,7 +1108,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
         flat_data_1 = datamodels.open(intflat_output_files_1[iexp])
         # Merge the FS slits into the MOS slits for NRS1
         if merge_fs_nrs1:
-            msgs.info('Appending interpolatedflat FS slits into MOS output for {:s}'.format(basenames_1[iexp]))
+            log.info('Appending interpolatedflat FS slits into MOS output for {:s}'.format(basenames_1[iexp]))
             flat_data_fs_1 = datamodels.open(intflat_fs_output_files_1[iexp])
             for slit in flat_data_fs_1.slits:
                 flat_data_1.slits.append(slit)
@@ -1120,7 +1120,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
         flat_data_2 = datamodels.open(intflat_output_files_2[iexp])
         # Merge the FS slits into the MOS slits for NRS2
         if merge_fs_nrs2:
-            msgs.info('Appending interpolatedflat FS slits into MOS output for {:s}'.format(basenames_2[iexp]))
+            log.info('Appending interpolatedflat FS slits into MOS output for {:s}'.format(basenames_2[iexp]))
             flat_data_fs_2 = datamodels.open(intflat_fs_output_files_2[iexp])
             for slit in flat_data_fs_2.slits:
                 flat_data_2.slits.append(slit)
