@@ -35,6 +35,7 @@ from pypeit.utils import inverse, fast_running_median, nan_mad_std
 
 from pypeit.spectrographs.util import load_spectrograph
 from pypeit import log
+from pypeit import log as msgs
 from pypeit import PypeItError
 from pypeit import spec2dobj
 
