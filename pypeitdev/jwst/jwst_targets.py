@@ -636,7 +636,32 @@ def jwst_targets(progid, disperser, target, slit=None):
             exp_list.append([uncalfile1, uncalfile2, uncalfile3])
 
         elif '4713' in progid:
-            if 'J0100+2802' in target:
+            if target == '4713_6733':
+                # Background galaxy at z=6.77 behind J0100+2802, used for the transverse proximity
+                # effect in Eilers et al. 2025 (arXiv:2509.05417). Slitlet 19 in observation 001,
+                # visit 002, present in both MSA configurations (msa_metadata_id 1 and 43).
+                # These are MAST _rate files (stage 1 already run), so pass exp_list as rate_list.
+                rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/4713'
+                redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/4713/G140M', target)
+                if disperser == 'G140M':
+                    file_list = []
+                    for prefix in ['jw04713001002_03101_0000', 'jw04713001002_05101_0000']:
+                        expnums = [2, 3, 4] if '03101' in prefix else [1, 2, 3]
+                        for ii in expnums:
+                            file_list.append(os.path.join(rawpath_level2, prefix + str(ii) + '_' + detname + '_rate.fits'))
+                    exp_list.append(file_list)
+
+            elif target == '4713_6733_obs2':
+                # The same galaxy in observation 002 (2025-08-09), placed in fixed slit S200A1 of the
+                # MSA exposure (slitlet_id -1), two dither positions. Reduce with reduce_slits=['S200A1'].
+                # These are MAST _rate files (stage 1 already run), so pass exp_list as rate_list.
+                rawpath_level2 = '/Users/jiamuh/jwst_redux/Raw/NIRSPEC_MSA/4713'
+                redux_dir = os.path.join('/Users/jiamuh/jwst_redux/redux/NIRSPEC_MSA/4713/G140M', target)
+                if disperser == 'G140M':
+                    exp_list.append([os.path.join(rawpath_level2, 'jw04713002001_03101_0000' + str(ii) + '_'
+                                                  + detname + '_rate.fits') for ii in [2, 3]])
+
+            elif 'J0100+2802' in target:
                 ## Prorgram for Slit Loss Characterization for MSA shutters
                 # PRISM data
                 rawpath_level2 = '/Users/joe/jwst_redux/Raw/NIRSPEC_MSA/4713/'

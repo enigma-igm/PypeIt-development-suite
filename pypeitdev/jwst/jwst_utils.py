@@ -769,9 +769,13 @@ class NIRSpecSlitCalibrations(datamodel.DataContainer):
         # Is this slit on nrs1?
         slit_names = np.array([slit.name for slit in ms_model.slits])
         intflat_slit_names = np.array([slit.name for slit in ms_model_flat.slits])
-        _indx = np.where((slit_names == slit_name) & (intflat_slit_names == slit_name))[0]
-        self.on_detector = _indx.size != 0
+        # Look the slit up by name in each model separately: the flat need not hold the same slits in the same
+        # order, e.g. jwst 1.16 writes only the fixed-slit flat to _interpolatedflat.fits for MOS+FS exposures.
+        _indx = np.where(slit_names == slit_name)[0]
+        _flat_indx = np.where(intflat_slit_names == slit_name)[0]
+        self.on_detector = (_indx.size != 0) & (_flat_indx.size != 0)
         self.slit_indx = int(_indx[0]) if self.on_detector else -1
+        flat_indx = int(_flat_indx[0]) if self.on_detector else -1
         self.source_name = ms_model.slits[self.slit_indx].source_name
         self.f070_f100_rescale = f070_f100_rescale
 
@@ -781,7 +785,7 @@ class NIRSpecSlitCalibrations(datamodel.DataContainer):
                 self.src_trace_ra, self.src_trace_dec, self.dq_sub, self.ra, self.dec, \
                 self.finitemask, self.waveimg, self.tilts, self.flatfield, self.pathloss, \
                 self.barshadow, self.photom_conversion, self.calwebb_proc = jwst_extract_subimgs(
-                ms_model.slits[self.slit_indx], ms_model_flat.slits[self.slit_indx], f070_f100_rescale=f070_f100_rescale)
+                ms_model.slits[self.slit_indx], ms_model_flat.slits[flat_indx], f070_f100_rescale=f070_f100_rescale)
 
     def show(self):
         # Connect to an open ginga window, or open a new one
@@ -1017,8 +1021,9 @@ def jwst_reduce(sciImg, slits, waveimg, tilts, spectrograph, par, show=False, fi
 
     # TODO add this as optional to objFind.run()?
 
-    # For JWST bkg_redux we don't perform any global skysubtraction whatsoever. We could in principle check
-    # bkg_redux here, but that is equiavlent since skip_skysub is set to True in the bkg_redux case.
+    # For JWST bkg_redux we by default don't perform any global skysubtraction whatsoever (skip_skysub is True).
+    # With bkg_redux_skysub in jwst_run_redux, skip_skysub is False and the residual sky in the difference image
+    # is fit with the positive and negative traces masked.
     if par['reduce']['findobj']['skip_skysub']:
         final_global_sky=global_sky0
     else:

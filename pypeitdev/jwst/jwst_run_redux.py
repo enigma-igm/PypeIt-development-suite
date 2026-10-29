@@ -833,7 +833,8 @@ class DitherOffsets:
 def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
                    reduce_slits=None, reduce_sources=None,
                    show=False, overwrite_stage1=False, overwrite_stage2=False,
-                   kludge_err=1.5, snr_thresh=10.0, find_trim_edge=[5,5], bkg_redux=False, run_bogus_f100lp=False):
+                   kludge_err=1.5, snr_thresh=10.0, find_trim_edge=[5,5], bkg_redux=False, run_bogus_f100lp=False,
+                   pypeit_subdir='pypeit', boxcar_radius=None, bkg_redux_skysub=False):
     """
     Main routine to reduce JWST NIRSpec data
     
@@ -865,10 +866,21 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     find_trim_edge : list, optional
         Trim the slit by this number of pixels left/right before finding objects.
     bkg_redux : bool, optional
-        If True, perform a background redux using image differencing. If False, model the background with a bspline. bkg_redux should typically be set to True for MSA reductions, 
-        and False for FS reductions.
+        If True, perform a background redux using image differencing. If False, model the background with a bspline. bkg_redux should typically be set to True for MSA reductions,
+        and False for FS reductions. The background for each exposure is the other exposures in the same
+        exposure set (same filename up to the exposure number), so several nod sets can be reduced together.
     run_bogus_f100lp : bool
         If True, run bogus redux for the 140H/F100LP grating to accomodate data taken with the F070LP filter? Default is False.
+    pypeit_subdir : str, optional
+        Subdirectory of redux_dir for the PypeIt output. The calwebb output in redux_dir/output is shared, so
+        reductions with different settings can be kept side by side. Default is 'pypeit'.
+    boxcar_radius : float, optional
+        Boxcar extraction radius in arcsec (the NIRSpec plate scale is 0.1"/pixel). Default is None, which keeps
+        the jwst_nirspec default.
+    bkg_redux_skysub : bool, optional
+        Only used with bkg_redux=True. If True, fit and subtract a global sky from the difference image (with the
+        positive and negative traces masked) to remove residual background, e.g. a sky level that changed between
+        exposures. Needs slits with sky pixels, such as fixed slits. Default is False.
 
     Returns
     -------
@@ -883,7 +895,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     output_dir = os.path.join(redux_dir, 'output')
     output_dir_level1 = os.path.join(output_dir, 'level1')
     output_dir_level2 = os.path.join(output_dir, 'level2')
-    pypeit_output_dir = os.path.join(redux_dir, 'pypeit')
+    pypeit_output_dir = os.path.join(redux_dir, pypeit_subdir)
 
     # Make the new Science dir
     # TODO: This needs to be defined by the user
@@ -952,7 +964,13 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
 
 
     rate_files_all = rate_files_1 + rate_files_2
-    bkg_indices = [(1,2), (0,2), (0,1)]
+    # Background exposures for difference imaging: the other exposures in the same exposure set, e.g.
+    # jw04713001002_03101_00002 is differenced against _00003 and _00004 but not against the 05101 set.
+    # For a single set of three this is [(1,2), (0,2), (0,1)].
+    exp_sets = [b.rsplit('_', 1)[0] for b in basenames]
+    bkg_indices = [tuple(j for j in range(nexp) if exp_sets[j] == exp_sets[i] and j != i) for i in range(nexp)]
+    if bkg_redux and any(len(bkg) == 0 for bkg in bkg_indices):
+        raise PypeItError('bkg_redux requires at least two exposures in every exposure set: {0}'.format(basenames))
 
     # TODO Should we flat field. The flat field and flat field error are wonky and probably nonsense
     param_dict_spec2 = {
@@ -1021,7 +1039,7 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
 
     # Set some parameters for difference imaging
     if bkg_redux:
-        par['reduce']['findobj']['skip_skysub'] = True # Do not sky-subtract when object finding
+        par['reduce']['findobj']['skip_skysub'] = not bkg_redux_skysub # By default do not sky-subtract the difference image
         par['reduce']['extraction']['skip_optimal'] = True # Skip local_skysubtraction and profile fitting
 
     # Turn off 2d model masking
@@ -1030,6 +1048,14 @@ def jwst_run_redux(redux_dir, source_type, uncal_list=None, rate_list=None,
     par['reduce']['findobj']['snr_thresh'] = snr_thresh
     par['reduce']['findobj']['find_fwhm'] = 2.0 # JWST data are often undersampled
     par['reduce']['findobj']['find_trim_edge'] = find_trim_edge
+    # Our slits keep the SlitTraceSet default specmin = -1, which FindObjects passes to objs_in_slit as the
+    # object-finding row range [-1, nspec]; -1 then slices only the last row and no object is ever found.
+    # Both must be [None, None]: a None in find_min_max is filled from trace_min_max, which would otherwise
+    # also be [-1, nspec]. objs_in_slit then uses the actual spectral extent of each slit.
+    par['reduce']['findobj']['find_min_max'] = [None, None]
+    par['reduce']['findobj']['trace_min_max'] = [None, None]
+    if boxcar_radius is not None:
+        par['reduce']['extraction']['boxcar_radius'] = boxcar_radius
 
 
     # Output file names
